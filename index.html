@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CHRONOS | Watch Atelier</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<style>
+:root{--bg:#080808;--bg2:#0e0e0d;--card:#1a1918;--card2:#222120;--bdr:#2a2725;--bdr2:#3d3a37;--fg:#e8e4de;--fgm:#8a8580;--fgd:#5a5550;--acc:#c9a96e;--accl:#dfc08a;--accd:#8a7548}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--fg);overflow:hidden;height:100vh}
+.fd{font-family:'Cormorant Garamond',serif}
+#watchCanvas{width:100%;height:100%;display:block}
+.vbtn{width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:rgba(26,25,24,.8);border:1px solid var(--bdr);border-radius:8px;color:var(--fgm);cursor:pointer;transition:all .2s;backdrop-filter:blur(8px)}
+.vbtn:hover{color:var(--fg);border-color:var(--bdr2);background:rgba(26,25,24,.95)}
+.tbtn{padding:12px 16px;font-size:13px;font-weight:500;color:var(--fgd);border:none;border-bottom:2px solid transparent;background:none;cursor:pointer;transition:all .2s;letter-spacing:.05em;font-family:inherit}
+.tbtn:hover{color:var(--fgm)}.tbtn.act{color:var(--acc);border-bottom-color:var(--acc)}
+.ogl{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--fgd);margin-bottom:8px;font-weight:500}
+.csw{width:32px;height:32px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:all .2s;flex-shrink:0}
+.csw:hover{transform:scale(1.12)}.csw.act{border-color:var(--acc);box-shadow:0 0 0 2px var(--bg2),0 0 0 4px var(--acc)}
+.sbtn{padding:8px 16px;font-size:12px;font-weight:500;color:var(--fgm);background:var(--card);border:1px solid var(--bdr);border-radius:6px;cursor:pointer;transition:all .2s;font-family:inherit;white-space:nowrap}
+.sbtn:hover{border-color:var(--bdr2);color:var(--fg)}.sbtn.act{border-color:var(--acc);color:var(--acc);background:rgba(201,169,110,.08)}
+.ttrack{width:44px;height:24px;border-radius:12px;background:var(--card);border:1px solid var(--bdr);cursor:pointer;position:relative;transition:all .3s;flex-shrink:0}
+.ttrack.act{background:var(--accd);border-color:var(--acc)}
+.tthumb{width:18px;height:18px;border-radius:50%;background:var(--fgm);position:absolute;top:2px;left:2px;transition:all .3s}
+.ttrack.act .tthumb{left:22px;background:var(--acc)}
+#tabContent::-webkit-scrollbar{width:4px}#tabContent::-webkit-scrollbar-track{background:transparent}#tabContent::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:2px}
+.srow{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bdr);font-size:13px}.srow:last-child{border-bottom:none}
+.slbl{color:var(--fgd)}.sval{color:var(--fg);font-weight:500}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.tc{animation:fadeUp .3s ease}
+.spec-card{background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:16px;margin-top:8px}
+@media(max-width:1023px){#panel{max-height:50vh;border-left:none!important;border-top:1px solid var(--bdr)}#viewer{min-height:50vh}}
+.price-num{font-variant-numeric:tabular-nums}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}
+</script>
+</head>
+<body>
+<!-- Header -->
+<header class="h-14 border-b flex items-center justify-between px-5 lg:px-8" style="border-color:var(--bdr)">
+<div class="flex items-center gap-3">
+<span class="fd text-xl tracking-[.3em]" style="color:var(--acc)">CHRONOS</span>
+<span class="text-[10px] tracking-[.25em] hidden sm:inline" style="color:var(--fgd)">ATELIER</span>
+</div>
+<nav class="hidden md:flex items-center gap-6 text-sm" style="color:var(--fgm)">
+<a href="#" class="hover:opacity-80 transition">Collections</a>
+<a href="#" class="hover:opacity-80 transition">Craftsmanship</a>
+<a href="#" style="color:var(--fg)">Configurator</a>
+<a href="#" class="hover:opacity-80 transition">Contact</a>
+</nav>
+<div class="flex items-center gap-4" style="color:var(--fgm)">
+<button class="hover:opacity-80 transition"><i class="far fa-heart text-sm"></i></button>
+<button class="hover:opacity-80 transition"><i class="fas fa-shopping-bag text-sm"></i></button>
+</div>
+</header>
+
+<!-- Main -->
+<main class="flex flex-col lg:flex-row" style="height:calc(100vh - 56px)">
+<!-- 3D Viewer -->
+<div id="viewer" class="flex-1 relative min-h-[300px]">
+<canvas id="watchCanvas"></canvas>
+<div class="absolute top-4 left-4 flex flex-col gap-2 z-10">
+<button id="btnMacro" class="vbtn" title="Macro Detail"><i class="fas fa-search-plus text-xs"></i></button>
+<button id="btnReset" class="vbtn" title="Reset View"><i class="fas fa-expand text-xs"></i></button>
+</div>
+<div class="absolute bottom-4 left-4 z-10">
+<div id="timeDisplay" class="font-mono text-xl lg:text-2xl tracking-[.2em]" style="color:var(--fgm)">00:00:00</div>
+</div>
+<div id="dragHint" class="absolute bottom-4 right-4 text-xs flex items-center gap-2 transition-opacity duration-700 z-10" style="color:var(--fgd)">
+<i class="fas fa-hand-pointer"></i><span>Drag to rotate</span>
+</div>
+</div>
+
+<!-- Panel -->
+<aside id="panel" class="w-full lg:w-[400px] xl:w-[440px] border-l flex flex-col overflow-hidden" style="border-color:var(--bdr);background:var(--bg2)">
+<div class="px-6 pt-5 pb-3">
+<h2 class="fd text-2xl tracking-wide">Configure Your Timepiece</h2>
+<p class="text-sm mt-1" style="color:var(--fgm)">Every detail, your choice</p>
+</div>
+<div class="flex px-6" style="border-bottom:1px solid var(--bdr)">
+<button class="tbtn act" data-tab="dial">Dial</button>
+<button class="tbtn" data-tab="case">Case</button>
+<button class="tbtn" data-tab="strap">Strap</button>
+<button class="tbtn" data-tab="details">Details</button>
+</div>
+<div class="flex-1 overflow-y-auto px-6 py-5" id="tabContent"></div>
+<div class="px-6 py-4" style="border-top:1px solid var(--bdr)">
+<div class="flex items-end justify-between">
+<div>
+<span class="text-[10px] uppercase tracking-[.12em]" style="color:var(--fgd)">Estimated Price</span>
+<div id="priceDisplay" class="text-3xl font-semibold tracking-tight price-num" style="color:var(--acc)">$2,500</div>
+</div>
+<button id="btnCart" class="px-6 py-3 text-sm font-semibold rounded transition-all active:scale-95" style="background:var(--acc);color:var(--bg)">Add to Collection</button>
+</div>
+</div>
+</aside>
+</main>
+
+<!-- Toast -->
+<div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 px-5 py-3 rounded-lg shadow-2xl flex items-center gap-3 transition-all duration-300 opacity-0 translate-y-4 pointer-events-none z-50" style="background:var(--card);border:1px solid var(--bdr)">
+<i class="fas fa-check-circle" style="color:var(--acc)"></i>
+<span id="toastMsg"></span>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+/* ===== Configuration State ===== */
+const cfg = {
+    dial: { color: '#0a0a0a', index: 'applied', hand: 'dauphine' },
+    cas:  { mat: 'steel', size: 40, water: 100 },
+    strap:{ type: 'leather', color: '#3d1f0e' },
+    acc:  { gems: false, lume: false }
+};
+
+const prices = {
+    base: 2500,
+    dialCol: { '#0a0a0a':0, '#1a2a4a':200, '#f0ece4':0, '#1a3a2a':300, '#d4c5a0':400 },
+    idx: { applied:0, roman:150, dot:0, stick:0 },
+    hand: { dauphine:0, baton:0, leaf:200 },
+    mat: { steel:0, gold:3000, black:500 },
+    size: { 38:0, 40:0, 42:0, 44:100 },
+    water: { 50:0, 100:200, 300:500 },
+    strapType: { leather:0, metal:400, silicone:0 },
+    gems: 2500, lume: 100
+};
+
+function calcPrice() {
+    let p = prices.base;
+    p += prices.dialCol[cfg.dial.color] || 0;
+    p += prices.idx[cfg.dial.index] || 0;
+    p += prices.hand[cfg.dial.hand] || 0;
+    p += prices.mat[cfg.cas.mat] || 0;
+    p += prices.size[cfg.cas.size] || 0;
+    p += prices.water[cfg.cas.water] || 0;
+    p += prices.strapType[cfg.strap.type] || 0;
+    if (cfg.acc.gems) p += prices.gems;
+    if (cfg.acc.lume) p += prices.lume;
+    return p;
+}
+
+function fmtPrice(n) { return '$' + n.toLocaleString('en-US'); }
+
+/* ===== Three.js Setup ===== */
+const canvas = document.getElementById('watchCanvas');
+const viewer = document.getElementById('viewer');
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
+camera.position.set(0, 0.8, 5.5);
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.3;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.4;
+controls.minDistance = 2.5;
+controls.maxDistance = 9;
+controls.enablePan = false;
+controls.target.set(0, 0, 0);
+
+let autoRotateTimer = null;
+controls.addEventListener('start', () => {
+    controls.autoRotate = false;
+    clearTimeout(autoRotateTimer);
+    const h = document.getElementById('dragHint');
+    if (h) h.style.opacity = '0';
+});
+controls.addEventListener('end', () => {
+    autoRotateTimer = setTimeout(() => { controls.autoRotate = true; }, 4000);
+});
+
+/* ===== Lighting ===== */
+scene.add(new THREE.AmbientLight(0x333333, 0.4));
+
+const keyLight = new THREE.DirectionalLight(0xfff0dd, 2.2);
+keyLight.position.set(4, 6, 5);
+keyLight.castShadow = true;
+keyLight.shadow.mapSize.set(1024, 1024);
+scene.add(keyLight);
+
+const fillLight = new THREE.DirectionalLight(0xc8d8f0, 0.5);
+fillLight.position.set(-4, 2, 4);
+scene.add(fillLight);
+
+const rimLight = new THREE.DirectionalLight(0xffffff, 0.9);
+rimLight.position.set(0, 3, -6);
+scene.add(rimLight);
+
+const bottomFill = new THREE.PointLight(0xc9a96e, 0.4, 12);
+bottomFill.position.set(0, -4, 2);
+scene.add(bottomFill);
+
+/* ===== Environment Map ===== */
+const pmrem = new THREE.PMREMGenerator(renderer);
+pmrem.compileEquirectangularShader();
+const envScene = new THREE.Scene();
+envScene.background = new THREE.Color(0x111111);
+const lp1 = new THREE.Mesh(new THREE.PlaneGeometry(12, 12), new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide }));
+lp1.position.set(0, 9, 0); lp1.rotation.x = Math.PI / 2; envScene.add(lp1);
+const lp2 = new THREE.Mesh(new THREE.PlaneGeometry(6, 6), new THREE.MeshBasicMaterial({ color: 0xfff5e0, side: THREE.DoubleSide }));
+lp2.position.set(6, 3, 5); lp2.lookAt(0, 0, 0); envScene.add(lp2);
+const lp3 = new THREE.Mesh(new THREE.PlaneGeometry(4, 4), new THREE.MeshBasicMaterial({ color: 0xe0e8ff, side: THREE.DoubleSide }));
+lp3.position.set(-5, 2, 4); lp3.lookAt(0, 0, 0); envScene.add(lp3);
+scene.environment = pmrem.fromScene(envScene, 0, 0.1, 100).texture;
+pmrem.dispose();
+
+/* ===== Ground Plane ===== */
+const groundMat = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.25, metalness: 0.7 });
+const ground = new THREE.Mesh(new THREE.CircleGeometry(6, 64), groundMat);
+ground.rotation.x = -Math.PI / 2;
+ground.position.y = -2.2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+/* ===== Background Particles ===== */
+const particleCount = 80;
+const pGeo = new THREE.BufferGeometry();
+const pPos = new Float32Array(particleCount * 3);
+for (let i = 0; i < particleCount; i++) {
+    pPos[i * 3] = (Math.random() - 0.5) * 16;
+    pPos[i * 3 + 1] = (Math.random() - 0.5) * 10;
+    pPos[i * 3 + 2] = (Math.random() - 0.5) * 16 - 3;
+}
+pGeo.setAttribute('position', new THREE.Float32BufferAttribute(pPos, 3));
+const pMat = new THREE.PointsMaterial({ color: 0xc9a96e, size: 0.015, transparent: true, opacity: 0.3 });
+scene.add(new THREE.Points(pGeo, pMat));
+
+/* ===== Watch Group ===== */
+const watchGroup = new THREE.Group();
+watchGroup.rotation.x = -0.25;
+watchGroup.rotation.y = 0.3;
+scene.add(watchGroup);
+
+/* ===== Materials Factory ===== */
+function caseMat() {
+    const defs = {
+        steel: { color: 0xc0c0c8, metalness: 0.95, roughness: 0.06 },
+        gold:  { color: 0xc9a96e, metalness: 0.95, roughness: 0.1 },
+        black: { color: 0x1c1c1c, metalness: 0.82, roughness: 0.18 }
+    };
+    const d = defs[cfg.cas.mat] || defs.steel;
+    return new THREE.MeshStandardMaterial(d);
+}
+
+function handMat() {
+    if (cfg.acc.lume) {
+        return new THREE.MeshStandardMaterial({ color: 0xe8e4de, metalness: 0.7, roughness: 0.2, emissive: 0x44cc66, emissiveIntensity: 0.3 });
+    }
+    const c = cfg.dial.color === '#f0ece4' ? 0x1a1a1a : 0xe8e4de;
+    return new THREE.MeshStandardMaterial({ color: c, metalness: 0.8, roughness: 0.15 });
+}
+
+function secHandMat() {
+    if (cfg.acc.lume) {
+        return new THREE.MeshStandardMaterial({ color: 0x44cc66, metalness: 0.3, roughness: 0.3, emissive: 0x44cc66, emissiveIntensity: 0.5 });
+    }
+    return new THREE.MeshStandardMaterial({ color: 0xcc3333, metalness: 0.5, roughness: 0.3 });
+}
+
+function gemMat() {
+    return new THREE.MeshPhysicalMaterial({
+        color: 0xffffff, metalness: 0.0, roughness: 0.0,
+        transmission: 0.6, thickness: 0.5, ior: 2.4,
+        emissive: 0x8888ff, emissiveIntensity: 0.15
+    });
+}
+
+/* ===== Dial Texture ===== */
+function makeDialTexture() {
+    const sz = 1024, c = document.createElement('canvas');
+    c.width = sz; c.height = sz;
+    const x = c.getContext('2d'), cx = sz / 2, cy = sz / 2, r = sz * 0.46;
+    const isDark = cfg.dial.color !== '#f0ece4';
+    const fg = isDark ? '#cccccc' : '#2a2a2a';
+    const fgd = isDark ? '#666666' : '#888888';
+
+    // Background
+    x.fillStyle = cfg.dial.color;
+    x.beginPath(); x.arc(cx, cy, r + 20, 0, Math.PI * 2); x.fill();
+
+    // Sunburst lines
+    x.save(); x.globalAlpha = 0.025;
+    for (let i = 0; i < 360; i++) {
+        const a = (i * Math.PI) / 180;
+        x.beginPath(); x.moveTo(cx, cy);
+        x.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
+        x.strokeStyle = '#ffffff'; x.lineWidth = 0.8; x.stroke();
+    }
+    x.restore();
+
+    // Subtle radial glow
+    const rg = x.createRadialGradient(cx, cy - r * 0.2, 0, cx, cy, r);
+    rg.addColorStop(0, 'rgba(255,255,255,0.04)');
+    rg.addColorStop(1, 'rgba(0,0,0,0.06)');
+    x.fillStyle = rg;
+    x.beginPath(); x.arc(cx, cy, r, 0, Math.PI * 2); x.fill();
+
+    // Minute track
+    for (let i = 0; i < 60; i++) {
+        const a = (i * Math.PI * 2) / 60 - Math.PI / 2;
+        const isH = i % 5 === 0;
+        const ir = isH ? r * 0.8 : r * 0.87;
+        const or = r * 0.91;
+        x.strokeStyle = fgd; x.lineWidth = isH ? 2.5 : 0.8;
+        x.beginPath();
+        x.moveTo(cx + Math.cos(a) * ir, cy + Math.sin(a) * ir);
+        x.lineTo(cx + Math.cos(a) * or, cy + Math.sin(a) * or);
+        x.stroke();
+    }
+
+    // Hour indices
+    x.fillStyle = fg; x.strokeStyle = fg;
+    for (let i = 0; i < 12; i++) {
+        const a = (i * Math.PI * 2) / 12 - Math.PI / 2;
+        const px = cx + Math.cos(a) * r * 0.7;
+        const py = cy + Math.sin(a) * r * 0.7;
+
+        if (cfg.dial.index === 'applied') {
+            x.save(); x.translate(px, py); x.rotate(a + Math.PI / 2);
+            const w = (i % 3 === 0) ? 10 : 6, h = (i % 3 === 0) ? 36 : 28;
+            x.fillStyle = fg;
+            x.shadowColor = 'rgba(0,0,0,0.4)'; x.shadowBlur = 4; x.shadowOffsetY = 2;
+            x.fillRect(-w / 2, -h / 2, w, h);
+            // Highlight edge
+            x.shadowBlur = 0; x.shadowOffsetY = 0;
+            x.fillStyle = isDark ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.3)';
+            x.fillRect(-w / 2, -h / 2, w, 2);
+            x.restore();
+        } else if (cfg.dial.index === 'roman') {
+            const romans = ['XII','I','II','III','IV','V','VI','VII','VIII','IX','X','XI'];
+            x.save(); x.translate(px, py); x.rotate(a + Math.PI / 2);
+            const fs = (i % 3 === 0) ? 30 : 22;
+            x.font = `500 ${fs}px Georgia, serif`;
+            x.textAlign = 'center'; x.textBaseline = 'middle';
+            x.fillStyle = fg; x.fillText(romans[i], 0, 0);
+            x.restore();
+        } else if (cfg.dial.index === 'dot') {
+            x.beginPath();
+            const dr = (i % 3 === 0) ? 8 : 5;
+            x.arc(px, py, Math.max(1, dr), 0, Math.PI * 2);
+            x.fillStyle = fg; x.fill();
+        } else if (cfg.dial.index === 'stick') {
+            x.save(); x.translate(px, py); x.rotate(a + Math.PI / 2);
+            const w = (i % 3 === 0) ? 2.5 : 1.2, h = (i % 3 === 0) ? 32 : 22;
+            x.strokeStyle = fg; x.lineWidth = w; x.lineCap = 'round';
+            x.beginPath(); x.moveTo(0, -h / 2); x.lineTo(0, h / 2); x.stroke();
+            x.restore();
+        }
+    }
+
+    // Fluorescent dots on indices
+    if (cfg.acc.lume) {
+        for (let i = 0; i < 12; i++) {
+            if (i % 3 !== 0) continue;
+            const a = (i * Math.PI * 2) / 12 - Math.PI / 2;
+            const lx = cx + Math.cos(a) * r * 0.78;
+            const ly = cy + Math.sin(a) * r * 0.78;
+            x.beginPath(); x.arc(lx, ly, 4, 0, Math.PI * 2);
+            x.fillStyle = '#44cc66'; x.shadowColor = '#44cc66'; x.shadowBlur = 8;
+            x.fill(); x.shadowBlur = 0;
+        }
+    }
+
+    // Brand name
+    x.fillStyle = fg; x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.font = '600 32px Georgia, serif';
+    x.fillText('CHRONOS', cx, cy - r * 0.38);
+    x.font = '300 14px "Space Grotesk", sans-serif';
+    x.letterSpacing = '3px';
+    x.fillText('AUTOMATIC', cx, cy - r * 0.28);
+
+    // Swiss Made
+    x.font = '400 11px "Space Grotesk", sans-serif';
+    x.fillStyle = fgd;
+    x.fillText('SWISS MADE', cx, cy + r * 0.42);
+
+    // Date window at 3 o'clock
+    const dx = cx + r * 0.55, dy = cy;
+    x.fillStyle = '#ffffff';
+    x.fillRect(dx - 14, dy - 10, 28, 20);
+    x.strokeStyle = '#aaaaaa'; x.lineWidth = 1;
+    x.strokeRect(dx - 14, dy - 10, 28, 20);
+    const today = new Date().getDate();
+    x.fillStyle = '#000000'; x.font = '600 13px "Space Grotesk", sans-serif';
+    x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.fillText(String(today), dx, dy);
+
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+}
+
+/* ===== Hand Geometry ===== */
+function handGeo(style, len) {
+    len = Math.max(0.01, len);
+    let shape;
+    const tail = len * 0.15;
+    if (style === 'dauphine') {
+        const w = len * 0.05;
+        shape = new THREE.Shape();
+        shape.moveTo(0, -tail);
+        shape.lineTo(w * 0.4, -tail * 0.3);
+        shape.lineTo(w, len * 0.35);
+        shape.lineTo(0, len);
+        shape.lineTo(-w, len * 0.35);
+        shape.lineTo(-w * 0.4, -tail * 0.3);
+        shape.closePath();
+    } else if (style === 'baton') {
+        const w = len * 0.035;
+        shape = new THREE.Shape();
+        shape.moveTo(-w, -tail);
+        shape.lineTo(w, -tail);
+        shape.lineTo(w, len * 0.92);
+        shape.quadraticCurveTo(w, len, 0, len);
+        shape.quadraticCurveTo(-w, len, -w, len * 0.92);
+        shape.closePath();
+    } else {
+        shape = new THREE.Shape();
+        shape.moveTo(0, -tail);
+        shape.quadraticCurveTo(len * 0.065, len * 0.15, 0, len);
+        shape.quadraticCurveTo(-len * 0.065, len * 0.15, 0, -tail);
+    }
+    return new THREE.ExtrudeGeometry(shape, { depth: 0.012, bevelEnabled: true, bevelThickness: 0.002, bevelSize: 0.002, bevelSegments: 2 });
+}
+
+function secHandGeo(len) {
+    len = Math.max(0.01, len);
+    const tail = len * 0.25;
+    const w = len * 0.012;
+    const shape = new THREE.Shape();
+    shape.moveTo(-w, -tail);
+    shape.lineTo(w, -tail);
+    shape.lineTo(w * 0.6, len);
+    shape.lineTo(0, len * 1.02);
+    shape.lineTo(-w * 0.6, len);
+    shape.closePath();
+    return new THREE.ExtrudeGeometry(shape, { depth: 0.006, bevelEnabled: false });
+}
+
+/* ===== Strap Geometry ===== */
+function strapGeo(w, l, curve, segs) {
+    w = Math.max(0.01, w); l = Math.max(0.01, l); curve = Math.max(0, curve); segs = Math.max(4, segs);
+    const pos = [], uvs = [], idx = [];
+    for (let i = 0; i <= segs; i++) {
+        const t = i / segs;
+        const y = (t - 0.5) * l;
+        const z = -Math.pow(Math.abs(t * 2 - 1), 1.6) * curve;
+        pos.push(-w / 2, y, z, w / 2, y, z);
+        uvs.push(0, t, 1, t);
+    }
+    for (let i = 0; i < segs; i++) {
+        const a = i * 2, b = a + 1, c = a + 2, d = a + 3;
+        idx.push(a, c, b, b, c, d);
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    g.setIndex(idx);
+    g.computeVertexNormals();
+    return g;
+}
+
+function strapTexture() {
+    const c = document.createElement('canvas');
+    c.width = 512; c.height = 2048;
+    const x = c.getContext('2d');
+    x.fillStyle = cfg.strap.color;
+    x.fillRect(0, 0, 512, 2048);
+
+    if (cfg.strap.type === 'leather') {
+        // Grain
+        for (let i = 0; i < 6000; i++) {
+            x.fillStyle = `rgba(${Math.random() > 0.5 ? 255 : 0},${Math.random() > 0.5 ? 255 : 0},${Math.random() > 0.5 ? 255 : 0},${Math.random() * 0.04})`;
+            x.fillRect(Math.random() * 512, Math.random() * 2048, Math.random() * 3 + 1, 1);
+        }
+        // Stitching
+        x.strokeStyle = 'rgba(255,255,255,0.12)'; x.lineWidth = 1; x.setLineDash([5, 4]);
+        x.beginPath(); x.moveTo(25, 0); x.lineTo(25, 2048); x.stroke();
+        x.beginPath(); x.moveTo(487, 0); x.lineTo(487, 2048); x.stroke();
+        x.setLineDash([]);
+        // Edge highlight
+        const eg = x.createLinearGradient(0, 0, 30, 0);
+        eg.addColorStop(0, 'rgba(255,255,255,0.06)'); eg.addColorStop(1, 'rgba(0,0,0,0)');
+        x.fillStyle = eg; x.fillRect(0, 0, 30, 2048);
+    } else if (cfg.strap.type === 'metal') {
+        const lh = 2048 / 28;
+        for (let i = 0; i < 28; i++) {
+            const y = i * lh;
+            const bright = i % 2 === 0 ? 0 : 15;
+            x.fillStyle = adjustCol(cfg.strap.color, bright);
+            x.fillRect(130, y + 1.5, 252, lh - 3);
+            x.fillStyle = adjustCol(cfg.strap.color, -bright);
+            x.fillRect(8, y + 4, 115, lh - 8);
+            x.fillRect(389, y + 4, 115, lh - 8);
+            x.strokeStyle = 'rgba(0,0,0,0.25)'; x.lineWidth = 1;
+            x.beginPath(); x.moveTo(0, y); x.lineTo(512, y); x.stroke();
+        }
+        // Center highlight
+        const hg = x.createLinearGradient(0, 0, 512, 0);
+        hg.addColorStop(0, 'rgba(255,255,255,0)'); hg.addColorStop(0.35, 'rgba(255,255,255,0.12)');
+        hg.addColorStop(0.5, 'rgba(255,255,255,0.18)'); hg.addColorStop(0.65, 'rgba(255,255,255,0.12)');
+        hg.addColorStop(1, 'rgba(255,255,255,0)');
+        x.fillStyle = hg; x.fillRect(0, 0, 512, 2048);
+    }
+    // Silicone: smooth, subtle sheen
+    if (cfg.strap.type === 'silicone') {
+        const sg = x.createLinearGradient(0, 0, 512, 0);
+        sg.addColorStop(0, 'rgba(0,0,0,0.08)'); sg.addColorStop(0.3, 'rgba(255,255,255,0.04)');
+        sg.addColorStop(0.5, 'rgba(255,255,255,0.08)'); sg.addColorStop(0.7, 'rgba(255,255,255,0.04)');
+        sg.addColorStop(1, 'rgba(0,0,0,0.08)');
+        x.fillStyle = sg; x.fillRect(0, 0, 512, 2048);
+    }
+
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+    return tex;
+}
+
+function adjustCol(hex, amt) {
+    let r = parseInt(hex.slice(1, 3), 16) + amt;
+    let g = parseInt(hex.slice(3, 5), 16) + amt;
+    let b = parseInt(hex.slice(5, 7), 16) + amt;
+    r = Math.max(0, Math.min(255, r)); g = Math.max(0, Math.min(255, g)); b = Math.max(0, Math.min(255, b));
+    return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
+}
+
+/* ===== Build Watch ===== */
+const parts = {};
+let gemsGroup = null, lumeGroup = null;
+
+function disposeGroup(g) {
+    if (!g) return;
+    g.traverse(ch => { if (ch.geometry) ch.geometry.dispose(); if (ch.material) { if (Array.isArray(ch.material)) ch.material.forEach(m => m.dispose()); else ch.material.dispose(); }});
+    if (g.parent) g.parent.remove(g);
+}
+
+function buildWatch() {
+    // Clean up previous
+    while (watchGroup.children.length) {
+        const ch = watchGroup.children[0];
+        disposeGroup(ch);
+    }
+    gemsGroup = null; lumeGroup = null;
+
+    const sc = cfg.cas.size / 40;
+    const cm = caseMat();
+    const R = 1.0; // case radius
+
+    // ---- Case Body ----
+    const caseBody = new THREE.Mesh(new THREE.CylinderGeometry(R, R, 0.28, 64), cm);
+    caseBody.castShadow = true;
+    watchGroup.add(caseBody);
+
+    // ---- Bezel ----
+    const bezel = new THREE.Mesh(new THREE.TorusGeometry(R, 0.07, 16, 64), cm);
+    bezel.rotation.x = Math.PI / 2;
+    bezel.position.y = 0.14;
+    watchGroup.add(bezel);
+
+    // ---- Case Back ----
+    const caseBack = new THREE.Mesh(new THREE.CylinderGeometry(R, R, 0.02, 64), cm);
+    caseBack.position.y = -0.15;
+    watchGroup.add(caseBack);
+
+    // ---- Crown ----
+    const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.18, 16), cm);
+    crown.rotation.z = Math.PI / 2;
+    crown.position.set(R + 0.09, 0, 0);
+    watchGroup.add(crown);
+    // Crown ridges
+    const crownRing = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.015, 8, 16), cm);
+    crownRing.position.set(R + 0.18, 0, 0);
+    crownRing.rotation.y = Math.PI / 2;
+    watchGroup.add(crownRing);
+
+    // ---- Lugs ----
+    const lugW = 0.18, lugH = 0.22, lugL = 0.3;
+    const lugPositions = [
+        [R * 0.55, 0.05, R + lugL * 0.4, 0.35],
+        [-R * 0.55, 0.05, R + lugL * 0.4, 0.35],
+        [R * 0.55, 0.05, -(R + lugL * 0.4), -0.35],
+        [-R * 0.55, 0.05, -(R + lugL * 0.4), -0.35]
+    ];
+    lugPositions.forEach(([lx, ly, lz, ry]) => {
+        const lug = new THREE.Mesh(new THREE.BoxGeometry(lugW, lugH, lugL), cm);
+        lug.position.set(lx, ly, lz);
+        lug.rotation.y = ry;
+        lug.castShadow = true;
+        watchGroup.add(lug);
+    });
+
+    // ---- Crystal ----
+    const crystalMat = new THREE.MeshPhysicalMaterial({
+        color: 0xffffff, transparent: true, opacity: 0.12,
+        roughness: 0.0, metalness: 0.0, transmission: 0.95,
+        thickness: 0.3, clearcoat: 1.0, clearcoatRoughness: 0.0,
+        ior: 1.52
+    });
+    const crystal = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.93, R * 0.93, 0.06, 64), crystalMat);
+    crystal.position.y = 0.17;
+    watchGroup.add(crystal);
+
+    // ---- Dial ----
+    const dialTex = makeDialTexture();
+    const dialMat2 = new THREE.MeshStandardMaterial({ map: dialTex, roughness: 0.6, metalness: 0.1 });
+    const dial = new THREE.Mesh(new THREE.CircleGeometry(R * 0.92, 64), dialMat2);
+    dial.rotation.x = -Math.PI / 2;
+    dial.position.y = 0.15;
+    watchGroup.add(dial);
+
+    // ---- Hands ----
+    const hm = handMat();
+    const sm = secHandMat();
+
+    const hourHand = new THREE.Mesh(handGeo(cfg.dial.hand, 0.52), hm);
+    hourHand.position.y = 0.18;
+    hourHand.rotation.x = -Math.PI / 2;
+    hourHand.castShadow = true;
+    watchGroup.add(hourHand);
+    parts.hourHand = hourHand;
+
+    const minuteHand = new THREE.Mesh(handGeo(cfg.dial.hand, 0.72), hm);
+    minuteHand.position.y = 0.2;
+    minuteHand.rotation.x = -Math.PI / 2;
+    minuteHand.castShadow = true;
+    watchGroup.add(minuteHand);
+    parts.minuteHand = minuteHand;
+
+    const secondHand = new THREE.Mesh(secHandGeo(0.78), sm);
+    secondHand.position.y = 0.22;
+    secondHand.rotation.x = -Math.PI / 2;
+    watchGroup.add(secondHand);
+    parts.secondHand = secondHand;
+
+    // Center pin
+    const pin = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.1, 16), cm);
+    pin.position.y = 0.24;
+    watchGroup.add(pin);
+
+    // ---- Gemstones ----
+    if (cfg.acc.gems) {
+        gemsGroup = new THREE.Group();
+        const gm = gemMat();
+        for (let i = 0; i < 12; i++) {
+            const a = (i * Math.PI * 2) / 12 - Math.PI / 2;
+            const gr = R * 0.7;
+            const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.04, 2), gm);
+            gem.position.set(Math.cos(a) * gr, 0.16, Math.sin(a) * gr);
+            gem.rotation.y = a;
+            gemsGroup.add(gem);
+        }
+        watchGroup.add(gemsGroup);
+    }
+
+    // ---- Straps ----
+    const sw = R * 0.6, sl = 3.0, sc2 = 0.5;
+    const stMat = new THREE.MeshStandardMaterial({
+        map: strapTexture(),
+        roughness: cfg.strap.type === 'metal' ? 0.15 : 0.7,
+        metalness: cfg.strap.type === 'metal' ? 0.85 : 0.05,
+        side: THREE.DoubleSide
+    });
+
+    const topStrap = new THREE.Mesh(strapGeo(sw, sl, sc2, 30), stMat);
+    topStrap.position.set(0, -0.05, R + sl * 0.35);
+    topStrap.castShadow = true;
+    watchGroup.add(topStrap);
+
+    const botStrap = new THREE.Mesh(strapGeo(sw, sl, sc2, 30), stMat.clone());
+    botStrap.material.map = strapTexture();
+    botStrap.position.set(0, -0.05, -(R + sl * 0.35));
+    botStrap.rotation.y = Math.PI;
+    botStrap.castShadow = true;
+    watchGroup.add(botStrap);
+
+    // Strap keeper (small loop)
+    const keeperGeo = new THREE.TorusGeometry(sw * 0.55, 0.02, 8, 16, Math.PI * 2);
+    const keeper = new THREE.Mesh(keeperGeo, stMat.clone());
+    keeper.position.set(0, -0.05, R + sl * 0.65);
+    keeper.rotation.x = Math.PI / 2;
+    watchGroup.add(keeper);
+
+    // Apply scale
+    watchGroup.scale.set(sc, sc, sc);
+}
+
+/* ===== Clock Update ===== */
+function updateClock() {
+    const now = new Date();
+    const h = now.getHours() % 12, m = now.getMinutes(), s = now.getSeconds(), ms = now.getMilliseconds();
+    const ss = s + ms / 1000;
+    const sm = m + ss / 60;
+    const sh = h + sm / 60;
+
+    if (parts.secondHand) parts.secondHand.rotation.z = -(ss / 60) * Math.PI * 2;
+    if (parts.minuteHand) parts.minuteHand.rotation.z = -(sm / 60) * Math.PI * 2;
+    if (parts.hourHand) parts.hourHand.rotation.z = -(sh / 12) * Math.PI * 2;
+
+    // Time display
+    const td = document.getElementById('timeDisplay');
+    if (td) {
+        td.textContent = `${String(now.getHours()).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+}
+
+/* ===== Camera Animation ===== */
+let camAnim = null;
+function animateCamera(targetPos, targetLook, dur = 1200) {
+    const sp = camera.position.clone(), st = controls.target.clone();
+    const start = performance.now();
+    function step(t) {
+        const p = Math.min(1, (t - start) / dur);
+        const e = p < 0.5 ? 2 * p * p : -1 + (4 - 2 * p) * p;
+        camera.position.lerpVectors(sp, targetPos, e);
+        controls.target.lerpVectors(st, targetLook, e);
+        controls.update();
+        if (p < 1) camAnim = requestAnimationFrame(step); else camAnim = null;
+    }
+    if (camAnim) cancelAnimationFrame(camAnim);
+    camAnim = requestAnimationFrame(step);
+}
+
+document.getElementById('btnMacro').addEventListener('click', () => {
+    controls.autoRotate = false;
+    const sc = cfg.cas.size / 40;
+    animateCamera(new THREE.Vector3(0, 0.3, 2.2 * sc), new THREE.Vector3(0, 0, 0));
+});
+document.getElementById('btnReset').addEventListener('click', () => {
+    animateCamera(new THREE.Vector3(0, 0.8, 5.5), new THREE.Vector3(0, 0, 0));
+    setTimeout(() => { controls.autoRotate = true; }, 1500);
+});
+
+/* ===== UI ===== */
+const tabContent = document.getElementById('tabContent');
+let currentTab = 'dial';
+
+const dialColors = [
+    { id: '#0a0a0a', label: 'Obsidian Black' },
+    { id: '#1a2a4a', label: 'Midnight Blue' },
+    { id: '#f0ece4', label: 'Pearl White' },
+    { id: '#1a3a2a', label: 'Forest Green' },
+    { id: '#d4c5a0', label: 'Champagne' }
+];
+const indexStyles = ['applied', 'roman', 'dot', 'stick'];
+const handStyles = ['dauphine', 'baton', 'leaf'];
+const caseMats = [
+    { id: 'steel', label: 'Steel', color: '#c0c0c8' },
+    { id: 'gold', label: 'Gold', color: '#c9a96e' },
+    { id: 'black', label: 'Black DLC', color: '#1c1c1c' }
+];
+const caseSizes = [38, 40, 42, 44];
+const waterRatings = [50, 100, 300];
+const strapTypes = ['leather', 'metal', 'silicone'];
+const strapColors = {
+    leather: [
+        { id: '#3d1f0e', label: 'Dark Brown' },
+        { id: '#1a1a1a', label: 'Black' },
+        { id: '#b5845a', label: 'Tan' },
+        { id: '#1a2040', label: 'Navy' }
+    ],
+    metal: [
+        { id: '#c0c0c8', label: 'Silver' },
+        { id: '#c9a96e', label: 'Gold' },
+        { id: '#b76e5a', label: 'Rose Gold' },
+        { id: '#1c1c1c', label: 'Black' }
+    ],
+    silicone: [
+        { id: '#1a1a1a', label: 'Black' },
+        { id: '#e8e4de', label: 'White' },
+        { id: '#2a3a6a', label: 'Blue' },
+        { id: '#6a2a2a', label: 'Red' }
+    ]
+};
+
+function renderTab(tab) {
+    currentTab = tab;
+    let html = '';
+
+    if (tab === 'dial') {
+        html += `<div class="tc"><div class="ogl">Dial Color</div><div class="flex gap-3 flex-wrap">`;
+        dialColors.forEach(c => {
+            const act = cfg.dial.color === c.id ? 'act' : '';
+            html += `<div class="csw ${act}" data-dialcol="${c.id}" style="background:${c.id};${c.id === '#f0ece4' ? 'box-shadow:inset 0 0 0 1px rgba(0,0,0,0.15)' : ''}" title="${c.label}"></div>`;
+        });
+        html += `</div><div class="text-xs mt-1" style="color:var(--fgd)">${dialColors.find(c => c.id === cfg.dial.color)?.label || ''}</div></div>`;
+
+        html += `<div class="tc mt-5"><div class="ogl">Index Style</div><div class="flex gap-2 flex-wrap">`;
+        indexStyles.forEach(s => {
+            const act = cfg.dial.index === s ? 'act' : '';
+            html += `<button class="sbtn ${act}" data-idx="${s}">${s.charAt(0).toUpperCase() + s.slice(1)}</button>`;
+        });
+        html += `</div></div>`;
+
+        html += `<div class="tc mt-5"><div class="ogl">Hand Style</div><div class="flex gap-2 flex-wrap">`;
+        handStyles.forEach(s => {
+            const act = cfg.dial.hand === s ? 'act' : '';
+            html += `<button class="sbtn ${act}" data-hand="${s}">${s.charAt(0).toUpperCase() + s.slice(1)}</button>`;
+        });
+        html += `</div></div>`;
+    }
+
+    else if (tab === 'case') {
+        html += `<div class="tc"><div class="ogl">Material</div><div class="flex gap-3">`;
+        caseMats.forEach(m => {
+            const act = cfg.cas.mat === m.id ? 'act' : '';
+            html += `<button class="sbtn ${act} flex items-center gap-2" data-casemat="${m.id}"><span class="w-4 h-4 rounded-full inline-block" style="background:${m.color};${m.id === 'black' ? 'box-shadow:inset 0 0 0 1px rgba(255,255,255,0.15)' : ''}"></span>${m.label}</button>`;
+        });
+        html += `</div></div>`;
+
+        html += `<div class="tc mt-5"><div class="ogl">Case Size</div><div class="flex gap-2">`;
+        caseSizes.forEach(s => {
+            const act = cfg.cas.size === s ? 'act' : '';
+            html += `<button class="sbtn ${act}" data-casesize="${s}">${s}mm</button>`;
+        });
+        html += `</div></div>`;
+
+        html += `<div class="tc mt-5"><div class="ogl">Water Resistance</div><div class="flex gap-2">`;
+        waterRatings.forEach(w => {
+            const act = cfg.cas.water === w ? 'act' : '';
+            const icon = w >= 300 ? 'fa-water' : w >= 100 ? 'fa-droplet' : 'fa-minus';
+            html += `<button class="sbtn ${act} flex items-center gap-2" data-water="${w}"><i class="fas ${icon} text-xs"></i>${w}m</button>`;
+        });
+        html += `</div></div>`;
+
+        html += `<div class="spec-card tc mt-5">
+            <div class="srow"><span class="slbl">Movement</span><span class="sval">Automatic</span></div>
+            <div class="srow"><span class="slbl">Power Reserve</span><span class="sval">72 hours</span></div>
+            <div class="srow"><span class="slbl">Frequency</span><span class="sval">28,800 vph</span></div>
+            <div class="srow"><span class="slbl">Jewels</span><span class="sval">${cfg.acc.gems ? '27 + 12 dial' : '27'}</span></div>
+        </div>`;
+    }
+
+    else if (tab === 'strap') {
+        html += `<div class="tc"><div class="ogl">Strap Type</div><div class="flex gap-2 flex-wrap">`;
+        strapTypes.forEach(t => {
+            const act = cfg.strap.type === t ? 'act' : '';
+            const icons = { leather: 'fa-cow', metal: 'fa-link', silicone: 'fa-circle' };
+            html += `<button class="sbtn ${act} flex items-center gap-2" data-straptype="${t}"><i class="fas ${icons[t]} text-xs"></i>${t.charAt(0).toUpperCase() + t.slice(1)}</button>`;
+        });
+        html += `</div></div>`;
+
+        const colors = strapColors[cfg.strap.type] || strapColors.leather;
+        html += `<div class="tc mt-5"><div class="ogl">Strap Color</div><div class="flex gap-3 flex-wrap">`;
+        colors.forEach(c => {
+            const act = cfg.strap.color === c.id ? 'act' : '';
+            const border = (c.id === '#1a1a1a' || c.id === '#1c1c1c' || c.id === '#1a2040' || c.id === '#2a3a6a' || c.id === '#6a2a2a') ? 'box-shadow:inset 0 0 0 1px rgba(255,255,255,0.12)' : '';
+            html += `<div class="csw ${act}" data-strapcol="${c.id}" style="background:${c.id};${border}" title="${c.label}"></div>`;
+        });
+        html += `</div><div class="text-xs mt-1" style="color:var(--fgd)">${colors.find(c => c.id === cfg.strap.color)?.label || ''}</div></div>`;
+
+        html += `<div class="spec-card tc mt-5">
+            <div class="srow"><span class="slbl">Width</span><span class="sval">${Math.round(cfg.cas.size * 0.6)}mm</span></div>
+            <div class="srow"><span class="slbl">Clasp</span><span class="sval">${cfg.strap.type === 'metal' ? 'Deployant' : 'Pin Buckle'}</span></div>
+            <div class="srow"><span class="slbl">Material</span><span class="sval">${cfg.strap.type.charAt(0).toUpperCase() + cfg.strap.type.slice(1)}</span></div>
+        </div>`;
+    }
+
+    else if (tab === 'details') {
+        html += `<div class="tc"><div class="ogl">Gemstone Indices</div>
+        <div class="flex items-center justify-between">
+            <div><div class="text-sm">12 Diamond Markers</div><div class="text-xs mt-0.5" style="color:var(--fgd)">VS1 clarity, F-G color</div></div>
+            <div class="ttrack ${cfg.acc.gems ? 'act' : ''}" data-toggle="gems"><div class="tthumb"></div></div>
+        </div></div>`;
+
+        html += `<div class="tc mt-5"><div class="ogl">Fluorescent Markings</div>
+        <div class="flex items-center justify-between">
+            <div><div class="text-sm">Super-LumiNova</div><div class="text-xs mt-0.5" style="color:var(--fgd)">Green emission, C5 grade</div></div>
+            <div class="ttrack ${cfg.acc.lume ? 'act' : ''}" data-toggle="lume"><div class="tthumb"></div></div>
+        </div></div>`;
+
+        html += `<div class="spec-card tc mt-6">
+            <div class="text-xs uppercase tracking-widest mb-3" style="color:var(--fgd)">Full Specifications</div>
+            <div class="srow"><span class="slbl">Case Diameter</span><span class="sval">${cfg.cas.size}mm</span></div>
+            <div class="srow"><span class="slbl">Case Material</span><span class="sval">${caseMats.find(m => m.id === cfg.cas.mat)?.label || ''}</span></div>
+            <div class="srow"><span class="slbl">Thickness</span><span class="sval">${Math.round(11.2 * cfg.cas.size / 40)}mm</span></div>
+            <div class="srow"><span class="slbl">Lug Width</span><span class="sval">${Math.round(cfg.cas.size * 0.6)}mm</span></div>
+            <div class="srow"><span class="slbl">Water Resistance</span><span class="sval">${cfg.cas.water}m / ${Math.round(cfg.cas.water * 3.281)}ft</span></div>
+            <div class="srow"><span class="slbl">Dial Color</span><span class="sval">${dialColors.find(c => c.id === cfg.dial.color)?.label || ''}</span></div>
+            <div class="srow"><span class="slbl">Crystal</span><span class="sval">Sapphire, AR coated</span></div>
+            <div class="srow"><span class="slbl">Movement</span><span class="sval">Cal. CH-3200 Automatic</span></div>
+            <div class="srow"><span class="slbl">Power Reserve</span><span class="sval">72 hours</span></div>
+            <div class="srow"><span class="slbl">Strap</span><span class="sval">${cfg.strap.type.charAt(0).toUpperCase() + cfg.strap.type.slice(1)}</span></div>
+        </div>`;
+    }
+
+    tabContent.innerHTML = html;
+    bindTabEvents();
+}
+
+function bindTabEvents() {
+    // Dial color
+    tabContent.querySelectorAll('[data-dialcol]').forEach(el => {
+        el.addEventListener('click', () => {
+            cfg.dial.color = el.dataset.dialcol;
+            buildWatch(); renderTab('dial'); updatePrice();
+        });
+    });
+    // Index style
+    tabContent.querySelectorAll('[data-idx]').forEach(el => {
+        el.addEventListener('click', () => {
+            cfg.dial.index = el.dataset.idx;
+            buildWatch(); renderTab('dial'); updatePrice();
+        });
+    });
+    // Hand style
+    tabContent.querySelectorAll('[data-hand]').forEach(el => {
+        el.addEventListener('click', () => {
+            cfg.dial.hand = el.dataset.hand;
+            buildWatch(); renderTab('dial'); updatePrice();
+        });
+    });
+    // Case material
+    tabContent.querySelectorAll('[data-casemat]').forEach(el => {
+        el.addEventListener('click', () => {
+            cfg.cas.mat = el.dataset.casemat;
+            buildWatch(); renderTab('case'); updatePrice();
+        });
+    });
+    // Case size
+    tabContent.querySelectorAll('[data-casesize]').forEach(el => {
+        el.addEventListener('click', () => {
+            cfg.cas.size = parseInt(el.dataset.casesize);
+            buildWatch(); renderTab('case'); updatePrice();
+        });
+    });
+    // Waterproof
+    tabContent.querySelectorAll('[data-water]').forEach(el => {
+        el.addEventListener('click', () => {
+            cfg.cas.water = parseInt(el.dataset.water);
+            renderTab('case'); updatePrice();
+        });
+    });
+    // Strap type
+    tabContent.querySelectorAll('[data-straptype]').forEach(el => {
+        el.addEventListener('click', () => {
+            cfg.strap.type = el.dataset.straptype;
+            // Auto-select first color of new type
+            const cols = strapColors[cfg.strap.type];
+            if (cols) cfg.strap.color = cols[0].id;
+            buildWatch(); renderTab('strap'); updatePrice();
+        });
+    });
+    // Strap color
+    tabContent.querySelectorAll('[data-strapcol]').forEach(el => {
+        el.addEventListener('click', () => {
+            cfg.strap.color = el.dataset.strapcol;
+            buildWatch(); renderTab('strap'); updatePrice();
+        });
+    });
+    // Toggles
+    tabContent.querySelectorAll('[data-toggle]').forEach(el => {
+        el.addEventListener('click', () => {
+            const key = el.dataset.toggle;
+            cfg.acc[key] = !cfg.acc[key];
+            buildWatch(); renderTab('details'); updatePrice();
+        });
+    });
+}
+
+// Tab navigation
+document.querySelectorAll('.tbtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.tbtn').forEach(b => b.classList.remove('act'));
+        btn.classList.add('act');
+        renderTab(btn.dataset.tab);
+    });
+});
+
+// Price
+function updatePrice() {
+    const el = document.getElementById('priceDisplay');
+    const target = calcPrice();
+    const current = parseInt(el.textContent.replace(/[^0-9]/g, '')) || 0;
+    const steps = 20;
+    let step = 0;
+    function tick() {
+        step++;
+        const t = step / steps;
+        const ease = 1 - Math.pow(1 - t, 3);
+        const val = Math.round(current + (target - current) * ease);
+        el.textContent = fmtPrice(val);
+        if (step < steps) requestAnimationFrame(tick);
+    }
+    tick();
+}
+
+// Add to cart
+document.getElementById('btnCart').addEventListener('click', () => {
+    showToast('Timepiece added to your collection');
+});
+
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    document.getElementById('toastMsg').textContent = msg;
+    t.style.opacity = '1'; t.style.transform = 'translateX(-50%) translateY(0)';
+    setTimeout(() => {
+        t.style.opacity = '0'; t.style.transform = 'translateX(-50%) translateY(16px)';
+    }, 2500);
+}
+
+/* ===== Resize ===== */
+function onResize() {
+    const w = viewer.clientWidth, h = viewer.clientHeight;
+    camera.aspect = w / Math.max(1, h);
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+}
+window.addEventListener('resize', onResize);
+
+/* ===== Animation Loop ===== */
+function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    updateClock();
+
+    // Subtle breathing
+    const t = performance.now() * 0.001;
+    const b = 1 + Math.sin(t * 0.6) * 0.003;
+    const sc = cfg.cas.size / 40;
+    watchGroup.scale.set(sc * b, sc * b, sc * b);
+
+    // Gem sparkle
+    if (gemsGroup) {
+        gemsGroup.children.forEach((g, i) => {
+            g.rotation.y = t * 0.5 + i * 0.5;
+            g.rotation.x = Math.sin(t + i) * 0.2;
+        });
+    }
+
+    // Particle drift
+    const pp = pGeo.attributes.position.array;
+    for (let i = 0; i < particleCount; i++) {
+        pp[i * 3 + 1] += Math.sin(t * 0.3 + i) * 0.0003;
+        pp[i * 3] += Math.cos(t * 0.2 + i * 0.7) * 0.0002;
+    }
+    pGeo.attributes.position.needsUpdate = true;
+
+    renderer.render(scene, camera);
+}
+
+/* ===== Init ===== */
+document.fonts.ready.then(() => {
+    onResize();
+    buildWatch();
+    renderTab('dial');
+    updatePrice();
+    animate();
+});
+</script>
+</body>
+</html>
