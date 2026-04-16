@@ -40,7 +40,6 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--fg)
 </script>
 </head>
 <body>
-<!-- Header -->
 <header class="h-14 border-b flex items-center justify-between px-5 lg:px-8" style="border-color:var(--bdr)">
 <div class="flex items-center gap-3">
 <span class="fd text-xl tracking-[.3em]" style="color:var(--acc)">CHRONOS</span>
@@ -58,9 +57,7 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--fg)
 </div>
 </header>
 
-<!-- Main -->
 <main class="flex flex-col lg:flex-row" style="height:calc(100vh - 56px)">
-<!-- 3D Viewer -->
 <div id="viewer" class="flex-1 relative min-h-[300px]">
 <canvas id="watchCanvas"></canvas>
 <div class="absolute top-4 left-4 flex flex-col gap-2 z-10">
@@ -75,7 +72,6 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--fg)
 </div>
 </div>
 
-<!-- Panel -->
 <aside id="panel" class="w-full lg:w-[400px] xl:w-[440px] border-l flex flex-col overflow-hidden" style="border-color:var(--bdr);background:var(--bg2)">
 <div class="px-6 pt-5 pb-3">
 <h2 class="fd text-2xl tracking-wide">Configure Your Timepiece</h2>
@@ -100,7 +96,6 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--fg)
 </aside>
 </main>
 
-<!-- Toast -->
 <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 px-5 py-3 rounded-lg shadow-2xl flex items-center gap-3 transition-all duration-300 opacity-0 translate-y-4 pointer-events-none z-50" style="background:var(--card);border:1px solid var(--bdr)">
 <i class="fas fa-check-circle" style="color:var(--acc)"></i>
 <span id="toastMsg"></span>
@@ -143,7 +138,6 @@ function calcPrice() {
     if (cfg.acc.lume) p += prices.lume;
     return p;
 }
-
 function fmtPrice(n) { return '$' + n.toLocaleString('en-US'); }
 
 /* ===== Three.js Setup ===== */
@@ -168,7 +162,6 @@ controls.autoRotateSpeed = 0.4;
 controls.minDistance = 2.5;
 controls.maxDistance = 9;
 controls.enablePan = false;
-controls.target.set(0, 0, 0);
 
 let autoRotateTimer = null;
 controls.addEventListener('start', () => {
@@ -183,21 +176,17 @@ controls.addEventListener('end', () => {
 
 /* ===== Lighting ===== */
 scene.add(new THREE.AmbientLight(0x333333, 0.4));
-
 const keyLight = new THREE.DirectionalLight(0xfff0dd, 2.2);
 keyLight.position.set(4, 6, 5);
 keyLight.castShadow = true;
 keyLight.shadow.mapSize.set(1024, 1024);
 scene.add(keyLight);
-
 const fillLight = new THREE.DirectionalLight(0xc8d8f0, 0.5);
 fillLight.position.set(-4, 2, 4);
 scene.add(fillLight);
-
 const rimLight = new THREE.DirectionalLight(0xffffff, 0.9);
 rimLight.position.set(0, 3, -6);
 scene.add(rimLight);
-
 const bottomFill = new THREE.PointLight(0xc9a96e, 0.4, 12);
 bottomFill.position.set(0, -4, 2);
 scene.add(bottomFill);
@@ -216,11 +205,13 @@ lp3.position.set(-5, 2, 4); lp3.lookAt(0, 0, 0); envScene.add(lp3);
 scene.environment = pmrem.fromScene(envScene, 0, 0.1, 100).texture;
 pmrem.dispose();
 
-/* ===== Ground Plane ===== */
-const groundMat = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.25, metalness: 0.7 });
-const ground = new THREE.Mesh(new THREE.CircleGeometry(6, 64), groundMat);
+/* ===== Ground ===== */
+const ground = new THREE.Mesh(
+    new THREE.CircleGeometry(6, 64),
+    new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.25, metalness: 0.7 })
+);
 ground.rotation.x = -Math.PI / 2;
-ground.position.y = -2.2;
+ground.position.y = -2.4;
 ground.receiveShadow = true;
 scene.add(ground);
 
@@ -234,8 +225,7 @@ for (let i = 0; i < particleCount; i++) {
     pPos[i * 3 + 2] = (Math.random() - 0.5) * 16 - 3;
 }
 pGeo.setAttribute('position', new THREE.Float32BufferAttribute(pPos, 3));
-const pMat = new THREE.PointsMaterial({ color: 0xc9a96e, size: 0.015, transparent: true, opacity: 0.3 });
-scene.add(new THREE.Points(pGeo, pMat));
+scene.add(new THREE.Points(pGeo, new THREE.PointsMaterial({ color: 0xc9a96e, size: 0.015, transparent: true, opacity: 0.3 })));
 
 /* ===== Watch Group ===== */
 const watchGroup = new THREE.Group();
@@ -243,7 +233,7 @@ watchGroup.rotation.x = -0.25;
 watchGroup.rotation.y = 0.3;
 scene.add(watchGroup);
 
-/* ===== Materials Factory ===== */
+/* ===== Material Factories ===== */
 function caseMat() {
     const defs = {
         steel: { color: 0xc0c0c8, metalness: 0.95, roughness: 0.06 },
@@ -253,28 +243,17 @@ function caseMat() {
     const d = defs[cfg.cas.mat] || defs.steel;
     return new THREE.MeshStandardMaterial(d);
 }
-
 function handMat() {
-    if (cfg.acc.lume) {
-        return new THREE.MeshStandardMaterial({ color: 0xe8e4de, metalness: 0.7, roughness: 0.2, emissive: 0x44cc66, emissiveIntensity: 0.3 });
-    }
+    if (cfg.acc.lume) return new THREE.MeshStandardMaterial({ color: 0xe8e4de, metalness: 0.7, roughness: 0.2, emissive: 0x44cc66, emissiveIntensity: 0.3 });
     const c = cfg.dial.color === '#f0ece4' ? 0x1a1a1a : 0xe8e4de;
     return new THREE.MeshStandardMaterial({ color: c, metalness: 0.8, roughness: 0.15 });
 }
-
 function secHandMat() {
-    if (cfg.acc.lume) {
-        return new THREE.MeshStandardMaterial({ color: 0x44cc66, metalness: 0.3, roughness: 0.3, emissive: 0x44cc66, emissiveIntensity: 0.5 });
-    }
+    if (cfg.acc.lume) return new THREE.MeshStandardMaterial({ color: 0x44cc66, metalness: 0.3, roughness: 0.3, emissive: 0x44cc66, emissiveIntensity: 0.5 });
     return new THREE.MeshStandardMaterial({ color: 0xcc3333, metalness: 0.5, roughness: 0.3 });
 }
-
 function gemMat() {
-    return new THREE.MeshPhysicalMaterial({
-        color: 0xffffff, metalness: 0.0, roughness: 0.0,
-        transmission: 0.6, thickness: 0.5, ior: 2.4,
-        emissive: 0x8888ff, emissiveIntensity: 0.15
-    });
+    return new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 0, roughness: 0, transmission: 0.6, thickness: 0.5, ior: 2.4, emissive: 0x8888ff, emissiveIntensity: 0.15 });
 }
 
 /* ===== Dial Texture ===== */
@@ -286,11 +265,9 @@ function makeDialTexture() {
     const fg = isDark ? '#cccccc' : '#2a2a2a';
     const fgd = isDark ? '#666666' : '#888888';
 
-    // Background
     x.fillStyle = cfg.dial.color;
     x.beginPath(); x.arc(cx, cy, r + 20, 0, Math.PI * 2); x.fill();
 
-    // Sunburst lines
     x.save(); x.globalAlpha = 0.025;
     for (let i = 0; i < 360; i++) {
         const a = (i * Math.PI) / 180;
@@ -300,14 +277,12 @@ function makeDialTexture() {
     }
     x.restore();
 
-    // Subtle radial glow
     const rg = x.createRadialGradient(cx, cy - r * 0.2, 0, cx, cy, r);
     rg.addColorStop(0, 'rgba(255,255,255,0.04)');
     rg.addColorStop(1, 'rgba(0,0,0,0.06)');
     x.fillStyle = rg;
     x.beginPath(); x.arc(cx, cy, r, 0, Math.PI * 2); x.fill();
 
-    // Minute track
     for (let i = 0; i < 60; i++) {
         const a = (i * Math.PI * 2) / 60 - Math.PI / 2;
         const isH = i % 5 === 0;
@@ -320,20 +295,17 @@ function makeDialTexture() {
         x.stroke();
     }
 
-    // Hour indices
     x.fillStyle = fg; x.strokeStyle = fg;
     for (let i = 0; i < 12; i++) {
         const a = (i * Math.PI * 2) / 12 - Math.PI / 2;
         const px = cx + Math.cos(a) * r * 0.7;
         const py = cy + Math.sin(a) * r * 0.7;
-
         if (cfg.dial.index === 'applied') {
             x.save(); x.translate(px, py); x.rotate(a + Math.PI / 2);
             const w = (i % 3 === 0) ? 10 : 6, h = (i % 3 === 0) ? 36 : 28;
             x.fillStyle = fg;
             x.shadowColor = 'rgba(0,0,0,0.4)'; x.shadowBlur = 4; x.shadowOffsetY = 2;
             x.fillRect(-w / 2, -h / 2, w, h);
-            // Highlight edge
             x.shadowBlur = 0; x.shadowOffsetY = 0;
             x.fillStyle = isDark ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.3)';
             x.fillRect(-w / 2, -h / 2, w, 2);
@@ -341,26 +313,23 @@ function makeDialTexture() {
         } else if (cfg.dial.index === 'roman') {
             const romans = ['XII','I','II','III','IV','V','VI','VII','VIII','IX','X','XI'];
             x.save(); x.translate(px, py); x.rotate(a + Math.PI / 2);
-            const fs = (i % 3 === 0) ? 30 : 22;
-            x.font = `500 ${fs}px Georgia, serif`;
+            x.font = `500 ${(i % 3 === 0) ? 30 : 22}px Georgia, serif`;
             x.textAlign = 'center'; x.textBaseline = 'middle';
             x.fillStyle = fg; x.fillText(romans[i], 0, 0);
             x.restore();
         } else if (cfg.dial.index === 'dot') {
             x.beginPath();
-            const dr = (i % 3 === 0) ? 8 : 5;
-            x.arc(px, py, Math.max(1, dr), 0, Math.PI * 2);
+            x.arc(px, py, Math.max(1, (i % 3 === 0) ? 8 : 5), 0, Math.PI * 2);
             x.fillStyle = fg; x.fill();
         } else if (cfg.dial.index === 'stick') {
             x.save(); x.translate(px, py); x.rotate(a + Math.PI / 2);
-            const w = (i % 3 === 0) ? 2.5 : 1.2, h = (i % 3 === 0) ? 32 : 22;
-            x.strokeStyle = fg; x.lineWidth = w; x.lineCap = 'round';
+            x.strokeStyle = fg; x.lineWidth = (i % 3 === 0) ? 2.5 : 1.2; x.lineCap = 'round';
+            const h = (i % 3 === 0) ? 32 : 22;
             x.beginPath(); x.moveTo(0, -h / 2); x.lineTo(0, h / 2); x.stroke();
             x.restore();
         }
     }
 
-    // Fluorescent dots on indices
     if (cfg.acc.lume) {
         for (let i = 0; i < 12; i++) {
             if (i % 3 !== 0) continue;
@@ -373,29 +342,21 @@ function makeDialTexture() {
         }
     }
 
-    // Brand name
     x.fillStyle = fg; x.textAlign = 'center'; x.textBaseline = 'middle';
     x.font = '600 32px Georgia, serif';
     x.fillText('CHRONOS', cx, cy - r * 0.38);
     x.font = '300 14px "Space Grotesk", sans-serif';
-    x.letterSpacing = '3px';
     x.fillText('AUTOMATIC', cx, cy - r * 0.28);
-
-    // Swiss Made
     x.font = '400 11px "Space Grotesk", sans-serif';
     x.fillStyle = fgd;
     x.fillText('SWISS MADE', cx, cy + r * 0.42);
 
-    // Date window at 3 o'clock
     const dx = cx + r * 0.55, dy = cy;
-    x.fillStyle = '#ffffff';
-    x.fillRect(dx - 14, dy - 10, 28, 20);
-    x.strokeStyle = '#aaaaaa'; x.lineWidth = 1;
-    x.strokeRect(dx - 14, dy - 10, 28, 20);
-    const today = new Date().getDate();
+    x.fillStyle = '#ffffff'; x.fillRect(dx - 14, dy - 10, 28, 20);
+    x.strokeStyle = '#aaaaaa'; x.lineWidth = 1; x.strokeRect(dx - 14, dy - 10, 28, 20);
     x.fillStyle = '#000000'; x.font = '600 13px "Space Grotesk", sans-serif';
     x.textAlign = 'center'; x.textBaseline = 'middle';
-    x.fillText(String(today), dx, dy);
+    x.fillText(String(new Date().getDate()), dx, dy);
 
     const tex = new THREE.CanvasTexture(c);
     tex.colorSpace = THREE.SRGBColorSpace;
@@ -405,23 +366,19 @@ function makeDialTexture() {
 /* ===== Hand Geometry ===== */
 function handGeo(style, len) {
     len = Math.max(0.01, len);
-    let shape;
     const tail = len * 0.15;
+    let shape;
     if (style === 'dauphine') {
         const w = len * 0.05;
         shape = new THREE.Shape();
-        shape.moveTo(0, -tail);
-        shape.lineTo(w * 0.4, -tail * 0.3);
-        shape.lineTo(w, len * 0.35);
-        shape.lineTo(0, len);
-        shape.lineTo(-w, len * 0.35);
-        shape.lineTo(-w * 0.4, -tail * 0.3);
+        shape.moveTo(0, -tail); shape.lineTo(w * 0.4, -tail * 0.3);
+        shape.lineTo(w, len * 0.35); shape.lineTo(0, len);
+        shape.lineTo(-w, len * 0.35); shape.lineTo(-w * 0.4, -tail * 0.3);
         shape.closePath();
     } else if (style === 'baton') {
         const w = len * 0.035;
         shape = new THREE.Shape();
-        shape.moveTo(-w, -tail);
-        shape.lineTo(w, -tail);
+        shape.moveTo(-w, -tail); shape.lineTo(w, -tail);
         shape.lineTo(w, len * 0.92);
         shape.quadraticCurveTo(w, len, 0, len);
         shape.quadraticCurveTo(-w, len, -w, len * 0.92);
@@ -437,27 +394,24 @@ function handGeo(style, len) {
 
 function secHandGeo(len) {
     len = Math.max(0.01, len);
-    const tail = len * 0.25;
-    const w = len * 0.012;
+    const tail = len * 0.25, w = len * 0.012;
     const shape = new THREE.Shape();
-    shape.moveTo(-w, -tail);
-    shape.lineTo(w, -tail);
-    shape.lineTo(w * 0.6, len);
-    shape.lineTo(0, len * 1.02);
-    shape.lineTo(-w * 0.6, len);
-    shape.closePath();
+    shape.moveTo(-w, -tail); shape.lineTo(w, -tail);
+    shape.lineTo(w * 0.6, len); shape.lineTo(0, len * 1.02);
+    shape.lineTo(-w * 0.6, len); shape.closePath();
     return new THREE.ExtrudeGeometry(shape, { depth: 0.006, bevelEnabled: false });
 }
 
-/* ===== Strap Geometry ===== */
+/* ===== Strap Geometry — built in XZ plane, length along Z, curve in Y ===== */
 function strapGeo(w, l, curve, segs) {
     w = Math.max(0.01, w); l = Math.max(0.01, l); curve = Math.max(0, curve); segs = Math.max(4, segs);
     const pos = [], uvs = [], idx = [];
     for (let i = 0; i <= segs; i++) {
         const t = i / segs;
-        const y = (t - 0.5) * l;
-        const z = -Math.pow(Math.abs(t * 2 - 1), 1.6) * curve;
-        pos.push(-w / 2, y, z, w / 2, y, z);
+        const z = t * l;                         // extends from z=0 (case end) to z=l (far end)
+        const y = -curve * Math.pow(t, 1.6);     // flat at case, curves down toward far end
+        const tw = w * (1 - t * 0.06);           // subtle taper toward tip
+        pos.push(-tw / 2, y, z,  tw / 2, y, z);
         uvs.push(0, t, 1, t);
     }
     for (let i = 0; i < segs; i++) {
@@ -478,22 +432,15 @@ function strapTexture() {
     const x = c.getContext('2d');
     x.fillStyle = cfg.strap.color;
     x.fillRect(0, 0, 512, 2048);
-
     if (cfg.strap.type === 'leather') {
-        // Grain
         for (let i = 0; i < 6000; i++) {
             x.fillStyle = `rgba(${Math.random() > 0.5 ? 255 : 0},${Math.random() > 0.5 ? 255 : 0},${Math.random() > 0.5 ? 255 : 0},${Math.random() * 0.04})`;
             x.fillRect(Math.random() * 512, Math.random() * 2048, Math.random() * 3 + 1, 1);
         }
-        // Stitching
         x.strokeStyle = 'rgba(255,255,255,0.12)'; x.lineWidth = 1; x.setLineDash([5, 4]);
         x.beginPath(); x.moveTo(25, 0); x.lineTo(25, 2048); x.stroke();
         x.beginPath(); x.moveTo(487, 0); x.lineTo(487, 2048); x.stroke();
         x.setLineDash([]);
-        // Edge highlight
-        const eg = x.createLinearGradient(0, 0, 30, 0);
-        eg.addColorStop(0, 'rgba(255,255,255,0.06)'); eg.addColorStop(1, 'rgba(0,0,0,0)');
-        x.fillStyle = eg; x.fillRect(0, 0, 30, 2048);
     } else if (cfg.strap.type === 'metal') {
         const lh = 2048 / 28;
         for (let i = 0; i < 28; i++) {
@@ -507,25 +454,22 @@ function strapTexture() {
             x.strokeStyle = 'rgba(0,0,0,0.25)'; x.lineWidth = 1;
             x.beginPath(); x.moveTo(0, y); x.lineTo(512, y); x.stroke();
         }
-        // Center highlight
         const hg = x.createLinearGradient(0, 0, 512, 0);
-        hg.addColorStop(0, 'rgba(255,255,255,0)'); hg.addColorStop(0.35, 'rgba(255,255,255,0.12)');
-        hg.addColorStop(0.5, 'rgba(255,255,255,0.18)'); hg.addColorStop(0.65, 'rgba(255,255,255,0.12)');
+        hg.addColorStop(0, 'rgba(255,255,255,0)');
+        hg.addColorStop(0.35, 'rgba(255,255,255,0.12)');
+        hg.addColorStop(0.5, 'rgba(255,255,255,0.18)');
+        hg.addColorStop(0.65, 'rgba(255,255,255,0.12)');
         hg.addColorStop(1, 'rgba(255,255,255,0)');
         x.fillStyle = hg; x.fillRect(0, 0, 512, 2048);
-    }
-    // Silicone: smooth, subtle sheen
-    if (cfg.strap.type === 'silicone') {
+    } else {
         const sg = x.createLinearGradient(0, 0, 512, 0);
-        sg.addColorStop(0, 'rgba(0,0,0,0.08)'); sg.addColorStop(0.3, 'rgba(255,255,255,0.04)');
-        sg.addColorStop(0.5, 'rgba(255,255,255,0.08)'); sg.addColorStop(0.7, 'rgba(255,255,255,0.04)');
+        sg.addColorStop(0, 'rgba(0,0,0,0.08)');
+        sg.addColorStop(0.5, 'rgba(255,255,255,0.08)');
         sg.addColorStop(1, 'rgba(0,0,0,0.08)');
         x.fillStyle = sg; x.fillRect(0, 0, 512, 2048);
     }
-
     const tex = new THREE.CanvasTexture(c);
     tex.colorSpace = THREE.SRGBColorSpace;
-    tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
     return tex;
 }
 
@@ -534,218 +478,230 @@ function adjustCol(hex, amt) {
     let g = parseInt(hex.slice(3, 5), 16) + amt;
     let b = parseInt(hex.slice(5, 7), 16) + amt;
     r = Math.max(0, Math.min(255, r)); g = Math.max(0, Math.min(255, g)); b = Math.max(0, Math.min(255, b));
-    return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
+    return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
 }
 
 /* ===== Build Watch ===== */
 const parts = {};
-let gemsGroup = null, lumeGroup = null;
+let gemsGroup = null;
 
 function disposeGroup(g) {
     if (!g) return;
-    g.traverse(ch => { if (ch.geometry) ch.geometry.dispose(); if (ch.material) { if (Array.isArray(ch.material)) ch.material.forEach(m => m.dispose()); else ch.material.dispose(); }});
+    g.traverse(ch => {
+        if (ch.geometry) ch.geometry.dispose();
+        if (ch.material) {
+            if (Array.isArray(ch.material)) ch.material.forEach(m => m.dispose());
+            else ch.material.dispose();
+        }
+    });
     if (g.parent) g.parent.remove(g);
 }
 
 function buildWatch() {
-    // Clean up previous
     while (watchGroup.children.length) {
-        const ch = watchGroup.children[0];
-        disposeGroup(ch);
+        disposeGroup(watchGroup.children[0]);
     }
-    gemsGroup = null; lumeGroup = null;
+    gemsGroup = null;
 
     const sc = cfg.cas.size / 40;
     const cm = caseMat();
-    const R = 1.0; // case radius
+    const R = 1.0;
 
-    // ---- Case Body ----
+    /* ---- Case Body ---- */
     const caseBody = new THREE.Mesh(new THREE.CylinderGeometry(R, R, 0.28, 64), cm);
     caseBody.castShadow = true;
     watchGroup.add(caseBody);
 
-    // ---- Bezel ----
+    /* ---- Bezel ---- */
     const bezel = new THREE.Mesh(new THREE.TorusGeometry(R, 0.07, 16, 64), cm);
     bezel.rotation.x = Math.PI / 2;
     bezel.position.y = 0.14;
     watchGroup.add(bezel);
 
-    // ---- Case Back ----
+    /* ---- Case Back ---- */
     const caseBack = new THREE.Mesh(new THREE.CylinderGeometry(R, R, 0.02, 64), cm);
     caseBack.position.y = -0.15;
     watchGroup.add(caseBack);
 
-    // ---- Crown ----
+    /* ---- Crown ---- */
     const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.18, 16), cm);
     crown.rotation.z = Math.PI / 2;
     crown.position.set(R + 0.09, 0, 0);
     watchGroup.add(crown);
-    // Crown ridges
     const crownRing = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.015, 8, 16), cm);
     crownRing.position.set(R + 0.18, 0, 0);
     crownRing.rotation.y = Math.PI / 2;
     watchGroup.add(crownRing);
 
-    // ---- Lugs ----
-    const lugW = 0.18, lugH = 0.22, lugL = 0.3;
-    const lugPositions = [
-        [R * 0.55, 0.05, R + lugL * 0.4, 0.35],
-        [-R * 0.55, 0.05, R + lugL * 0.4, 0.35],
-        [R * 0.55, 0.05, -(R + lugL * 0.4), -0.35],
-        [-R * 0.55, 0.05, -(R + lugL * 0.4), -0.35]
+    /* ---- Lugs ---- */
+    const lugSpacing = 0.72;
+    const lugW = 0.13, lugH = 0.2, lugL = 0.38;
+    const lugAngle = 0.1;
+    const lugY = -0.02;
+
+    const lugDefs = [
+        { x: -lugSpacing / 2, z:  R + lugL / 2, ry: -lugAngle },
+        { x:  lugSpacing / 2, z:  R + lugL / 2, ry:  lugAngle },
+        { x: -lugSpacing / 2, z: -(R + lugL / 2), ry:  lugAngle },
+        { x:  lugSpacing / 2, z: -(R + lugL / 2), ry: -lugAngle },
     ];
-    lugPositions.forEach(([lx, ly, lz, ry]) => {
+    const holeMat = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.95 });
+
+    lugDefs.forEach(d => {
         const lug = new THREE.Mesh(new THREE.BoxGeometry(lugW, lugH, lugL), cm);
-        lug.position.set(lx, ly, lz);
-        lug.rotation.y = ry;
+        lug.position.set(d.x, lugY, d.z);
+        lug.rotation.y = d.ry;
         lug.castShadow = true;
         watchGroup.add(lug);
+
+        // Spring bar hole at the outer end of each lug
+        const hole = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.022, 0.022, lugW + 0.01, 8),
+            holeMat
+        );
+        hole.rotation.z = Math.PI / 2;
+        const holeDir = d.z > 0 ? 1 : -1;
+        hole.position.set(d.x, lugY, d.z + holeDir * lugL * 0.38);
+        watchGroup.add(hole);
     });
 
-    // ---- Crystal ----
+    /* ---- Crystal ---- */
     const crystalMat = new THREE.MeshPhysicalMaterial({
         color: 0xffffff, transparent: true, opacity: 0.12,
-        roughness: 0.0, metalness: 0.0, transmission: 0.95,
-        thickness: 0.3, clearcoat: 1.0, clearcoatRoughness: 0.0,
-        ior: 1.52
+        roughness: 0, metalness: 0, transmission: 0.95,
+        thickness: 0.3, clearcoat: 1, clearcoatRoughness: 0, ior: 1.52
     });
     const crystal = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.93, R * 0.93, 0.06, 64), crystalMat);
     crystal.position.y = 0.17;
     watchGroup.add(crystal);
 
-    // ---- Dial ----
+    /* ---- Dial ---- */
     const dialTex = makeDialTexture();
-    const dialMat2 = new THREE.MeshStandardMaterial({ map: dialTex, roughness: 0.6, metalness: 0.1 });
-    const dial = new THREE.Mesh(new THREE.CircleGeometry(R * 0.92, 64), dialMat2);
+    const dial = new THREE.Mesh(
+        new THREE.CircleGeometry(R * 0.92, 64),
+        new THREE.MeshStandardMaterial({ map: dialTex, roughness: 0.6, metalness: 0.1 })
+    );
     dial.rotation.x = -Math.PI / 2;
     dial.position.y = 0.15;
     watchGroup.add(dial);
 
-    // ---- Hands ----
-    const hm = handMat();
-    const sm = secHandMat();
+    /* ---- Hands ---- */
+    const hm = handMat(), sm = secHandMat();
 
     const hourHand = new THREE.Mesh(handGeo(cfg.dial.hand, 0.52), hm);
-    hourHand.position.y = 0.18;
-    hourHand.rotation.x = -Math.PI / 2;
+    hourHand.position.y = 0.18; hourHand.rotation.x = -Math.PI / 2;
     hourHand.castShadow = true;
-    watchGroup.add(hourHand);
-    parts.hourHand = hourHand;
+    watchGroup.add(hourHand); parts.hourHand = hourHand;
 
     const minuteHand = new THREE.Mesh(handGeo(cfg.dial.hand, 0.72), hm);
-    minuteHand.position.y = 0.2;
-    minuteHand.rotation.x = -Math.PI / 2;
+    minuteHand.position.y = 0.2; minuteHand.rotation.x = -Math.PI / 2;
     minuteHand.castShadow = true;
-    watchGroup.add(minuteHand);
-    parts.minuteHand = minuteHand;
+    watchGroup.add(minuteHand); parts.minuteHand = minuteHand;
 
     const secondHand = new THREE.Mesh(secHandGeo(0.78), sm);
-    secondHand.position.y = 0.22;
-    secondHand.rotation.x = -Math.PI / 2;
-    watchGroup.add(secondHand);
-    parts.secondHand = secondHand;
+    secondHand.position.y = 0.22; secondHand.rotation.x = -Math.PI / 2;
+    watchGroup.add(secondHand); parts.secondHand = secondHand;
 
-    // Center pin
     const pin = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.1, 16), cm);
     pin.position.y = 0.24;
     watchGroup.add(pin);
 
-    // ---- Gemstones ----
+    /* ---- Gemstones ---- */
     if (cfg.acc.gems) {
         gemsGroup = new THREE.Group();
         const gm = gemMat();
         for (let i = 0; i < 12; i++) {
             const a = (i * Math.PI * 2) / 12 - Math.PI / 2;
-            const gr = R * 0.7;
             const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.04, 2), gm);
-            gem.position.set(Math.cos(a) * gr, 0.16, Math.sin(a) * gr);
+            gem.position.set(Math.cos(a) * R * 0.7, 0.16, Math.sin(a) * R * 0.7);
             gem.rotation.y = a;
             gemsGroup.add(gem);
         }
         watchGroup.add(gemsGroup);
     }
 
-    // ---- Straps ----
-    const sw = R * 0.6, sl = 3.0, sc2 = 0.5;
-    const stMat = new THREE.MeshStandardMaterial({
+    /* ---- Straps ---- */
+    const strapW = lugSpacing - lugW + 0.02;   // 0.61 — fits between lug inner faces
+    const strapL = 3.2;
+    const strapCurve = 0.55;
+
+    const stOpts = {
         map: strapTexture(),
         roughness: cfg.strap.type === 'metal' ? 0.15 : 0.7,
         metalness: cfg.strap.type === 'metal' ? 0.85 : 0.05,
         side: THREE.DoubleSide
-    });
+    };
 
-    const topStrap = new THREE.Mesh(strapGeo(sw, sl, sc2, 30), stMat);
-    topStrap.position.set(0, -0.05, R + sl * 0.35);
+    // Top strap — extends from case edge at z=R toward +Z
+    const topStrap = new THREE.Mesh(strapGeo(strapW, strapL, strapCurve, 32), new THREE.MeshStandardMaterial(stOpts));
+    topStrap.position.set(0, lugY, R);
     topStrap.castShadow = true;
     watchGroup.add(topStrap);
 
-    const botStrap = new THREE.Mesh(strapGeo(sw, sl, sc2, 30), stMat.clone());
-    botStrap.material.map = strapTexture();
-    botStrap.position.set(0, -0.05, -(R + sl * 0.35));
-    botStrap.rotation.y = Math.PI;
+    // Bottom strap — extends from case edge at z=-R toward -Z
+    const botStrap = new THREE.Mesh(strapGeo(strapW, strapL, strapCurve, 32), new THREE.MeshStandardMaterial({ ...stOpts, map: strapTexture() }));
+    botStrap.position.set(0, lugY, -R);
+    botStrap.rotation.y = Math.PI;       // mirror so it extends in -Z
     botStrap.castShadow = true;
     watchGroup.add(botStrap);
 
-    // Strap keeper (small loop)
-    const keeperGeo = new THREE.TorusGeometry(sw * 0.55, 0.02, 8, 16, Math.PI * 2);
-    const keeper = new THREE.Mesh(keeperGeo, stMat.clone());
-    keeper.position.set(0, -0.05, R + sl * 0.65);
-    keeper.rotation.x = Math.PI / 2;
-    watchGroup.add(keeper);
+    // Keeper loops — positioned on each strap at ~60% along length
+    const keeperGeo = new THREE.TorusGeometry(strapW * 0.52, 0.018, 8, 24);
+    const keeperMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(cfg.strap.color).multiplyScalar(0.9), roughness: 0.6, metalness: 0.1 });
 
-    // Apply scale
+    [1, -1].forEach(dir => {
+        const keeperT = 0.6;
+        const keeperZ = dir * (R + strapL * keeperT);
+        const keeperY = lugY - strapCurve * Math.pow(keeperT, 1.6);
+        const keeper = new THREE.Mesh(keeperGeo, keeperMat);
+        keeper.position.set(0, keeperY + 0.01, keeperZ);
+        keeper.rotation.x = Math.PI / 2;
+        watchGroup.add(keeper);
+    });
+
+    // Scale entire watch group
     watchGroup.scale.set(sc, sc, sc);
 }
 
-/* ===== Clock Update ===== */
+/* ===== Clock ===== */
 function updateClock() {
     const now = new Date();
     const h = now.getHours() % 12, m = now.getMinutes(), s = now.getSeconds(), ms = now.getMilliseconds();
-    const ss = s + ms / 1000;
-    const sm = m + ss / 60;
-    const sh = h + sm / 60;
-
+    const ss = s + ms / 1000, sm = m + ss / 60, sh = h + sm / 60;
     if (parts.secondHand) parts.secondHand.rotation.z = -(ss / 60) * Math.PI * 2;
     if (parts.minuteHand) parts.minuteHand.rotation.z = -(sm / 60) * Math.PI * 2;
-    if (parts.hourHand) parts.hourHand.rotation.z = -(sh / 12) * Math.PI * 2;
-
-    // Time display
+    if (parts.hourHand)   parts.hourHand.rotation.z   = -(sh / 12) * Math.PI * 2;
     const td = document.getElementById('timeDisplay');
-    if (td) {
-        td.textContent = `${String(now.getHours()).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-    }
+    if (td) td.textContent = `${String(now.getHours()).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
 
-/* ===== Camera Animation ===== */
+/* ===== Camera Animations ===== */
 let camAnim = null;
-function animateCamera(targetPos, targetLook, dur = 1200) {
+function animateCamera(tp, tl, dur = 1200) {
     const sp = camera.position.clone(), st = controls.target.clone();
     const start = performance.now();
     function step(t) {
         const p = Math.min(1, (t - start) / dur);
         const e = p < 0.5 ? 2 * p * p : -1 + (4 - 2 * p) * p;
-        camera.position.lerpVectors(sp, targetPos, e);
-        controls.target.lerpVectors(st, targetLook, e);
+        camera.position.lerpVectors(sp, tp, e);
+        controls.target.lerpVectors(st, tl, e);
         controls.update();
         if (p < 1) camAnim = requestAnimationFrame(step); else camAnim = null;
     }
     if (camAnim) cancelAnimationFrame(camAnim);
     camAnim = requestAnimationFrame(step);
 }
-
 document.getElementById('btnMacro').addEventListener('click', () => {
     controls.autoRotate = false;
-    const sc = cfg.cas.size / 40;
-    animateCamera(new THREE.Vector3(0, 0.3, 2.2 * sc), new THREE.Vector3(0, 0, 0));
+    animateCamera(new THREE.Vector3(0, 0.3, 2.2 * cfg.cas.size / 40), new THREE.Vector3(0, 0, 0));
 });
 document.getElementById('btnReset').addEventListener('click', () => {
     animateCamera(new THREE.Vector3(0, 0.8, 5.5), new THREE.Vector3(0, 0, 0));
     setTimeout(() => { controls.autoRotate = true; }, 1500);
 });
 
-/* ===== UI ===== */
+/* ===== UI Logic ===== */
 const tabContent = document.getElementById('tabContent');
-let currentTab = 'dial';
 
 const dialColors = [
     { id: '#0a0a0a', label: 'Obsidian Black' },
@@ -765,212 +721,81 @@ const caseSizes = [38, 40, 42, 44];
 const waterRatings = [50, 100, 300];
 const strapTypes = ['leather', 'metal', 'silicone'];
 const strapColors = {
-    leather: [
-        { id: '#3d1f0e', label: 'Dark Brown' },
-        { id: '#1a1a1a', label: 'Black' },
-        { id: '#b5845a', label: 'Tan' },
-        { id: '#1a2040', label: 'Navy' }
-    ],
-    metal: [
-        { id: '#c0c0c8', label: 'Silver' },
-        { id: '#c9a96e', label: 'Gold' },
-        { id: '#b76e5a', label: 'Rose Gold' },
-        { id: '#1c1c1c', label: 'Black' }
-    ],
-    silicone: [
-        { id: '#1a1a1a', label: 'Black' },
-        { id: '#e8e4de', label: 'White' },
-        { id: '#2a3a6a', label: 'Blue' },
-        { id: '#6a2a2a', label: 'Red' }
-    ]
+    leather: [{ id: '#3d1f0e', label: 'Dark Brown' },{ id: '#1a1a1a', label: 'Black' },{ id: '#b5845a', label: 'Tan' },{ id: '#1a2040', label: 'Navy' }],
+    metal: [{ id: '#c0c0c8', label: 'Silver' },{ id: '#c9a96e', label: 'Gold' },{ id: '#b76e5a', label: 'Rose Gold' },{ id: '#1c1c1c', label: 'Black' }],
+    silicone: [{ id: '#1a1a1a', label: 'Black' },{ id: '#e8e4de', label: 'White' },{ id: '#2a3a6a', label: 'Blue' },{ id: '#6a2a2a', label: 'Red' }]
 };
 
 function renderTab(tab) {
-    currentTab = tab;
     let html = '';
-
     if (tab === 'dial') {
         html += `<div class="tc"><div class="ogl">Dial Color</div><div class="flex gap-3 flex-wrap">`;
         dialColors.forEach(c => {
-            const act = cfg.dial.color === c.id ? 'act' : '';
-            html += `<div class="csw ${act}" data-dialcol="${c.id}" style="background:${c.id};${c.id === '#f0ece4' ? 'box-shadow:inset 0 0 0 1px rgba(0,0,0,0.15)' : ''}" title="${c.label}"></div>`;
+            html += `<div class="csw ${cfg.dial.color === c.id ? 'act' : ''}" data-dialcol="${c.id}" style="background:${c.id};${c.id === '#f0ece4' ? 'box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)' : ''}" title="${c.label}"></div>`;
         });
-        html += `</div><div class="text-xs mt-1" style="color:var(--fgd)">${dialColors.find(c => c.id === cfg.dial.color)?.label || ''}</div></div>`;
-
+        html += `</div><div class="text-xs mt-1" style="color:var(--fgd)">${dialColors.find(c=>c.id===cfg.dial.color)?.label||''}</div></div>`;
         html += `<div class="tc mt-5"><div class="ogl">Index Style</div><div class="flex gap-2 flex-wrap">`;
-        indexStyles.forEach(s => {
-            const act = cfg.dial.index === s ? 'act' : '';
-            html += `<button class="sbtn ${act}" data-idx="${s}">${s.charAt(0).toUpperCase() + s.slice(1)}</button>`;
-        });
+        indexStyles.forEach(s => { html += `<button class="sbtn ${cfg.dial.index===s?'act':''}" data-idx="${s}">${s[0].toUpperCase()+s.slice(1)}</button>`; });
         html += `</div></div>`;
-
         html += `<div class="tc mt-5"><div class="ogl">Hand Style</div><div class="flex gap-2 flex-wrap">`;
-        handStyles.forEach(s => {
-            const act = cfg.dial.hand === s ? 'act' : '';
-            html += `<button class="sbtn ${act}" data-hand="${s}">${s.charAt(0).toUpperCase() + s.slice(1)}</button>`;
-        });
+        handStyles.forEach(s => { html += `<button class="sbtn ${cfg.dial.hand===s?'act':''}" data-hand="${s}">${s[0].toUpperCase()+s.slice(1)}</button>`; });
         html += `</div></div>`;
-    }
-
-    else if (tab === 'case') {
+    } else if (tab === 'case') {
         html += `<div class="tc"><div class="ogl">Material</div><div class="flex gap-3">`;
-        caseMats.forEach(m => {
-            const act = cfg.cas.mat === m.id ? 'act' : '';
-            html += `<button class="sbtn ${act} flex items-center gap-2" data-casemat="${m.id}"><span class="w-4 h-4 rounded-full inline-block" style="background:${m.color};${m.id === 'black' ? 'box-shadow:inset 0 0 0 1px rgba(255,255,255,0.15)' : ''}"></span>${m.label}</button>`;
-        });
+        caseMats.forEach(m => { html += `<button class="sbtn ${cfg.cas.mat===m.id?'act':''} flex items-center gap-2" data-casemat="${m.id}"><span class="w-4 h-4 rounded-full inline-block" style="background:${m.color};${m.id==='black'?'box-shadow:inset 0 0 0 1px rgba(255,255,255,.15)':''}"></span>${m.label}</button>`; });
         html += `</div></div>`;
-
         html += `<div class="tc mt-5"><div class="ogl">Case Size</div><div class="flex gap-2">`;
-        caseSizes.forEach(s => {
-            const act = cfg.cas.size === s ? 'act' : '';
-            html += `<button class="sbtn ${act}" data-casesize="${s}">${s}mm</button>`;
-        });
+        caseSizes.forEach(s => { html += `<button class="sbtn ${cfg.cas.size===s?'act':''}" data-casesize="${s}">${s}mm</button>`; });
         html += `</div></div>`;
-
         html += `<div class="tc mt-5"><div class="ogl">Water Resistance</div><div class="flex gap-2">`;
-        waterRatings.forEach(w => {
-            const act = cfg.cas.water === w ? 'act' : '';
-            const icon = w >= 300 ? 'fa-water' : w >= 100 ? 'fa-droplet' : 'fa-minus';
-            html += `<button class="sbtn ${act} flex items-center gap-2" data-water="${w}"><i class="fas ${icon} text-xs"></i>${w}m</button>`;
-        });
+        waterRatings.forEach(w => { const ic = w>=300?'fa-water':w>=100?'fa-droplet':'fa-minus'; html += `<button class="sbtn ${cfg.cas.water===w?'act':''} flex items-center gap-2" data-water="${w}"><i class="fas ${ic} text-xs"></i>${w}m</button>`; });
         html += `</div></div>`;
-
-        html += `<div class="spec-card tc mt-5">
-            <div class="srow"><span class="slbl">Movement</span><span class="sval">Automatic</span></div>
-            <div class="srow"><span class="slbl">Power Reserve</span><span class="sval">72 hours</span></div>
-            <div class="srow"><span class="slbl">Frequency</span><span class="sval">28,800 vph</span></div>
-            <div class="srow"><span class="slbl">Jewels</span><span class="sval">${cfg.acc.gems ? '27 + 12 dial' : '27'}</span></div>
-        </div>`;
-    }
-
-    else if (tab === 'strap') {
+        html += `<div class="spec-card tc mt-5"><div class="srow"><span class="slbl">Movement</span><span class="sval">Automatic</span></div><div class="srow"><span class="slbl">Power Reserve</span><span class="sval">72 hours</span></div><div class="srow"><span class="slbl">Frequency</span><span class="sval">28,800 vph</span></div><div class="srow"><span class="slbl">Jewels</span><span class="sval">${cfg.acc.gems?'27 + 12 dial':'27'}</span></div></div>`;
+    } else if (tab === 'strap') {
+        const icons = { leather:'fa-cow', metal:'fa-link', silicone:'fa-circle' };
         html += `<div class="tc"><div class="ogl">Strap Type</div><div class="flex gap-2 flex-wrap">`;
-        strapTypes.forEach(t => {
-            const act = cfg.strap.type === t ? 'act' : '';
-            const icons = { leather: 'fa-cow', metal: 'fa-link', silicone: 'fa-circle' };
-            html += `<button class="sbtn ${act} flex items-center gap-2" data-straptype="${t}"><i class="fas ${icons[t]} text-xs"></i>${t.charAt(0).toUpperCase() + t.slice(1)}</button>`;
-        });
+        strapTypes.forEach(t => { html += `<button class="sbtn ${cfg.strap.type===t?'act':''} flex items-center gap-2" data-straptype="${t}"><i class="fas ${icons[t]} text-xs"></i>${t[0].toUpperCase()+t.slice(1)}</button>`; });
         html += `</div></div>`;
-
-        const colors = strapColors[cfg.strap.type] || strapColors.leather;
+        const cols = strapColors[cfg.strap.type] || strapColors.leather;
         html += `<div class="tc mt-5"><div class="ogl">Strap Color</div><div class="flex gap-3 flex-wrap">`;
-        colors.forEach(c => {
-            const act = cfg.strap.color === c.id ? 'act' : '';
-            const border = (c.id === '#1a1a1a' || c.id === '#1c1c1c' || c.id === '#1a2040' || c.id === '#2a3a6a' || c.id === '#6a2a2a') ? 'box-shadow:inset 0 0 0 1px rgba(255,255,255,0.12)' : '';
-            html += `<div class="csw ${act}" data-strapcol="${c.id}" style="background:${c.id};${border}" title="${c.label}"></div>`;
-        });
-        html += `</div><div class="text-xs mt-1" style="color:var(--fgd)">${colors.find(c => c.id === cfg.strap.color)?.label || ''}</div></div>`;
-
-        html += `<div class="spec-card tc mt-5">
-            <div class="srow"><span class="slbl">Width</span><span class="sval">${Math.round(cfg.cas.size * 0.6)}mm</span></div>
-            <div class="srow"><span class="slbl">Clasp</span><span class="sval">${cfg.strap.type === 'metal' ? 'Deployant' : 'Pin Buckle'}</span></div>
-            <div class="srow"><span class="slbl">Material</span><span class="sval">${cfg.strap.type.charAt(0).toUpperCase() + cfg.strap.type.slice(1)}</span></div>
-        </div>`;
+        cols.forEach(c => { const bd = ['#1a1a1a','#1c1c1c','#1a2040','#2a3a6a','#6a2a2a'].includes(c.id)?'box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)':''; html += `<div class="csw ${cfg.strap.color===c.id?'act':''}" data-strapcol="${c.id}" style="background:${c.id};${bd}" title="${c.label}"></div>`; });
+        html += `</div><div class="text-xs mt-1" style="color:var(--fgd)">${cols.find(c=>c.id===cfg.strap.color)?.label||''}</div></div>`;
+        html += `<div class="spec-card tc mt-5"><div class="srow"><span class="slbl">Width</span><span class="sval">${Math.round(cfg.cas.size*0.6)}mm</span></div><div class="srow"><span class="slbl">Clasp</span><span class="sval">${cfg.strap.type==='metal'?'Deployant':'Pin Buckle'}</span></div><div class="srow"><span class="slbl">Material</span><span class="sval">${cfg.strap.type[0].toUpperCase()+cfg.strap.type.slice(1)}</span></div></div>`;
+    } else if (tab === 'details') {
+        html += `<div class="tc"><div class="ogl">Gemstone Indices</div><div class="flex items-center justify-between"><div><div class="text-sm">12 Diamond Markers</div><div class="text-xs mt-0.5" style="color:var(--fgd)">VS1 clarity, F-G color</div></div><div class="ttrack ${cfg.acc.gems?'act':''}" data-toggle="gems"><div class="tthumb"></div></div></div></div>`;
+        html += `<div class="tc mt-5"><div class="ogl">Fluorescent Markings</div><div class="flex items-center justify-between"><div><div class="text-sm">Super-LumiNova</div><div class="text-xs mt-0.5" style="color:var(--fgd)">Green emission, C5 grade</div></div><div class="ttrack ${cfg.acc.lume?'act':''}" data-toggle="lume"><div class="tthumb"></div></div></div></div>`;
+        html += `<div class="spec-card tc mt-6"><div class="text-xs uppercase tracking-widest mb-3" style="color:var(--fgd)">Full Specifications</div>`;
+        const specs = [
+            ['Case Diameter', cfg.cas.size+'mm'],
+            ['Case Material', caseMats.find(m=>m.id===cfg.cas.mat)?.label||''],
+            ['Thickness', Math.round(11.2*cfg.cas.size/40)+'mm'],
+            ['Lug Width', Math.round(cfg.cas.size*0.6)+'mm'],
+            ['Water Resistance', cfg.cas.water+'m / '+Math.round(cfg.cas.water*3.281)+'ft'],
+            ['Dial Color', dialColors.find(c=>c.id===cfg.dial.color)?.label||''],
+            ['Crystal', 'Sapphire, AR coated'],
+            ['Movement', 'Cal. CH-3200 Automatic'],
+            ['Power Reserve', '72 hours'],
+            ['Strap', cfg.strap.type[0].toUpperCase()+cfg.strap.type.slice(1)]
+        ];
+        specs.forEach(([l,v]) => { html += `<div class="srow"><span class="slbl">${l}</span><span class="sval">${v}</span></div>`; });
+        html += `</div>`;
     }
-
-    else if (tab === 'details') {
-        html += `<div class="tc"><div class="ogl">Gemstone Indices</div>
-        <div class="flex items-center justify-between">
-            <div><div class="text-sm">12 Diamond Markers</div><div class="text-xs mt-0.5" style="color:var(--fgd)">VS1 clarity, F-G color</div></div>
-            <div class="ttrack ${cfg.acc.gems ? 'act' : ''}" data-toggle="gems"><div class="tthumb"></div></div>
-        </div></div>`;
-
-        html += `<div class="tc mt-5"><div class="ogl">Fluorescent Markings</div>
-        <div class="flex items-center justify-between">
-            <div><div class="text-sm">Super-LumiNova</div><div class="text-xs mt-0.5" style="color:var(--fgd)">Green emission, C5 grade</div></div>
-            <div class="ttrack ${cfg.acc.lume ? 'act' : ''}" data-toggle="lume"><div class="tthumb"></div></div>
-        </div></div>`;
-
-        html += `<div class="spec-card tc mt-6">
-            <div class="text-xs uppercase tracking-widest mb-3" style="color:var(--fgd)">Full Specifications</div>
-            <div class="srow"><span class="slbl">Case Diameter</span><span class="sval">${cfg.cas.size}mm</span></div>
-            <div class="srow"><span class="slbl">Case Material</span><span class="sval">${caseMats.find(m => m.id === cfg.cas.mat)?.label || ''}</span></div>
-            <div class="srow"><span class="slbl">Thickness</span><span class="sval">${Math.round(11.2 * cfg.cas.size / 40)}mm</span></div>
-            <div class="srow"><span class="slbl">Lug Width</span><span class="sval">${Math.round(cfg.cas.size * 0.6)}mm</span></div>
-            <div class="srow"><span class="slbl">Water Resistance</span><span class="sval">${cfg.cas.water}m / ${Math.round(cfg.cas.water * 3.281)}ft</span></div>
-            <div class="srow"><span class="slbl">Dial Color</span><span class="sval">${dialColors.find(c => c.id === cfg.dial.color)?.label || ''}</span></div>
-            <div class="srow"><span class="slbl">Crystal</span><span class="sval">Sapphire, AR coated</span></div>
-            <div class="srow"><span class="slbl">Movement</span><span class="sval">Cal. CH-3200 Automatic</span></div>
-            <div class="srow"><span class="slbl">Power Reserve</span><span class="sval">72 hours</span></div>
-            <div class="srow"><span class="slbl">Strap</span><span class="sval">${cfg.strap.type.charAt(0).toUpperCase() + cfg.strap.type.slice(1)}</span></div>
-        </div>`;
-    }
-
     tabContent.innerHTML = html;
     bindTabEvents();
 }
 
 function bindTabEvents() {
-    // Dial color
-    tabContent.querySelectorAll('[data-dialcol]').forEach(el => {
-        el.addEventListener('click', () => {
-            cfg.dial.color = el.dataset.dialcol;
-            buildWatch(); renderTab('dial'); updatePrice();
-        });
-    });
-    // Index style
-    tabContent.querySelectorAll('[data-idx]').forEach(el => {
-        el.addEventListener('click', () => {
-            cfg.dial.index = el.dataset.idx;
-            buildWatch(); renderTab('dial'); updatePrice();
-        });
-    });
-    // Hand style
-    tabContent.querySelectorAll('[data-hand]').forEach(el => {
-        el.addEventListener('click', () => {
-            cfg.dial.hand = el.dataset.hand;
-            buildWatch(); renderTab('dial'); updatePrice();
-        });
-    });
-    // Case material
-    tabContent.querySelectorAll('[data-casemat]').forEach(el => {
-        el.addEventListener('click', () => {
-            cfg.cas.mat = el.dataset.casemat;
-            buildWatch(); renderTab('case'); updatePrice();
-        });
-    });
-    // Case size
-    tabContent.querySelectorAll('[data-casesize]').forEach(el => {
-        el.addEventListener('click', () => {
-            cfg.cas.size = parseInt(el.dataset.casesize);
-            buildWatch(); renderTab('case'); updatePrice();
-        });
-    });
-    // Waterproof
-    tabContent.querySelectorAll('[data-water]').forEach(el => {
-        el.addEventListener('click', () => {
-            cfg.cas.water = parseInt(el.dataset.water);
-            renderTab('case'); updatePrice();
-        });
-    });
-    // Strap type
-    tabContent.querySelectorAll('[data-straptype]').forEach(el => {
-        el.addEventListener('click', () => {
-            cfg.strap.type = el.dataset.straptype;
-            // Auto-select first color of new type
-            const cols = strapColors[cfg.strap.type];
-            if (cols) cfg.strap.color = cols[0].id;
-            buildWatch(); renderTab('strap'); updatePrice();
-        });
-    });
-    // Strap color
-    tabContent.querySelectorAll('[data-strapcol]').forEach(el => {
-        el.addEventListener('click', () => {
-            cfg.strap.color = el.dataset.strapcol;
-            buildWatch(); renderTab('strap'); updatePrice();
-        });
-    });
-    // Toggles
-    tabContent.querySelectorAll('[data-toggle]').forEach(el => {
-        el.addEventListener('click', () => {
-            const key = el.dataset.toggle;
-            cfg.acc[key] = !cfg.acc[key];
-            buildWatch(); renderTab('details'); updatePrice();
-        });
-    });
+    tabContent.querySelectorAll('[data-dialcol]').forEach(el => el.addEventListener('click', () => { cfg.dial.color = el.dataset.dialcol; buildWatch(); renderTab('dial'); updatePrice(); }));
+    tabContent.querySelectorAll('[data-idx]').forEach(el => el.addEventListener('click', () => { cfg.dial.index = el.dataset.idx; buildWatch(); renderTab('dial'); updatePrice(); }));
+    tabContent.querySelectorAll('[data-hand]').forEach(el => el.addEventListener('click', () => { cfg.dial.hand = el.dataset.hand; buildWatch(); renderTab('dial'); updatePrice(); }));
+    tabContent.querySelectorAll('[data-casemat]').forEach(el => el.addEventListener('click', () => { cfg.cas.mat = el.dataset.casemat; buildWatch(); renderTab('case'); updatePrice(); }));
+    tabContent.querySelectorAll('[data-casesize]').forEach(el => el.addEventListener('click', () => { cfg.cas.size = parseInt(el.dataset.casesize); buildWatch(); renderTab('case'); updatePrice(); }));
+    tabContent.querySelectorAll('[data-water]').forEach(el => el.addEventListener('click', () => { cfg.cas.water = parseInt(el.dataset.water); renderTab('case'); updatePrice(); }));
+    tabContent.querySelectorAll('[data-straptype]').forEach(el => el.addEventListener('click', () => { cfg.strap.type = el.dataset.straptype; cfg.strap.color = (strapColors[cfg.strap.type]||[])[0]?.id||'#1a1a1a'; buildWatch(); renderTab('strap'); updatePrice(); }));
+    tabContent.querySelectorAll('[data-strapcol]').forEach(el => el.addEventListener('click', () => { cfg.strap.color = el.dataset.strapcol; buildWatch(); renderTab('strap'); updatePrice(); }));
+    tabContent.querySelectorAll('[data-toggle]').forEach(el => el.addEventListener('click', () => { cfg.acc[el.dataset.toggle] = !cfg.acc[el.dataset.toggle]; buildWatch(); renderTab('details'); updatePrice(); }));
 }
 
-// Tab navigation
 document.querySelectorAll('.tbtn').forEach(btn => {
     btn.addEventListener('click', () => {
         document.querySelectorAll('.tbtn').forEach(b => b.classList.remove('act'));
@@ -979,36 +804,27 @@ document.querySelectorAll('.tbtn').forEach(btn => {
     });
 });
 
-// Price
 function updatePrice() {
     const el = document.getElementById('priceDisplay');
     const target = calcPrice();
     const current = parseInt(el.textContent.replace(/[^0-9]/g, '')) || 0;
-    const steps = 20;
-    let step = 0;
+    let step = 0; const steps = 20;
     function tick() {
         step++;
-        const t = step / steps;
-        const ease = 1 - Math.pow(1 - t, 3);
-        const val = Math.round(current + (target - current) * ease);
-        el.textContent = fmtPrice(val);
+        const t = step / steps, ease = 1 - Math.pow(1 - t, 3);
+        el.textContent = fmtPrice(Math.round(current + (target - current) * ease));
         if (step < steps) requestAnimationFrame(tick);
     }
     tick();
 }
 
-// Add to cart
-document.getElementById('btnCart').addEventListener('click', () => {
-    showToast('Timepiece added to your collection');
-});
+document.getElementById('btnCart').addEventListener('click', () => showToast('Timepiece added to your collection'));
 
 function showToast(msg) {
     const t = document.getElementById('toast');
     document.getElementById('toastMsg').textContent = msg;
     t.style.opacity = '1'; t.style.transform = 'translateX(-50%) translateY(0)';
-    setTimeout(() => {
-        t.style.opacity = '0'; t.style.transform = 'translateX(-50%) translateY(16px)';
-    }, 2500);
+    setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateX(-50%) translateY(16px)'; }, 2500);
 }
 
 /* ===== Resize ===== */
@@ -1025,40 +841,19 @@ function animate() {
     requestAnimationFrame(animate);
     controls.update();
     updateClock();
-
-    // Subtle breathing
     const t = performance.now() * 0.001;
-    const b = 1 + Math.sin(t * 0.6) * 0.003;
     const sc = cfg.cas.size / 40;
+    const b = 1 + Math.sin(t * 0.6) * 0.003;
     watchGroup.scale.set(sc * b, sc * b, sc * b);
-
-    // Gem sparkle
-    if (gemsGroup) {
-        gemsGroup.children.forEach((g, i) => {
-            g.rotation.y = t * 0.5 + i * 0.5;
-            g.rotation.x = Math.sin(t + i) * 0.2;
-        });
-    }
-
-    // Particle drift
+    if (gemsGroup) gemsGroup.children.forEach((g, i) => { g.rotation.y = t * 0.5 + i * 0.5; g.rotation.x = Math.sin(t + i) * 0.2; });
     const pp = pGeo.attributes.position.array;
-    for (let i = 0; i < particleCount; i++) {
-        pp[i * 3 + 1] += Math.sin(t * 0.3 + i) * 0.0003;
-        pp[i * 3] += Math.cos(t * 0.2 + i * 0.7) * 0.0002;
-    }
+    for (let i = 0; i < particleCount; i++) { pp[i*3+1] += Math.sin(t*0.3+i)*0.0003; pp[i*3] += Math.cos(t*0.2+i*0.7)*0.0002; }
     pGeo.attributes.position.needsUpdate = true;
-
     renderer.render(scene, camera);
 }
 
 /* ===== Init ===== */
-document.fonts.ready.then(() => {
-    onResize();
-    buildWatch();
-    renderTab('dial');
-    updatePrice();
-    animate();
-});
+document.fonts.ready.then(() => { onResize(); buildWatch(); renderTab('dial'); updatePrice(); animate(); });
 </script>
 </body>
 </html>
